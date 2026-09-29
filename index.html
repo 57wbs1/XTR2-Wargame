@@ -1,0 +1,835 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>XTR 2 Wargame · Syn 1</title>
+<style>
+:root{--bg:#0b111b;--card:#121a27;--card2:#182233;--line:#26324a;--ink:#e7ecf3;--mut:#93a0b4;--bf:#5b8def;--bf2:#3d6fd6;--bfbg:rgba(91,141,239,.14);
+--rf:#ff5d5d;--rfbg:rgba(255,93,93,.10);--fav:#6fd08c;--favbg:rgba(111,208,140,.13);--con:#f2b84b;--conbg:rgba(242,184,75,.13);--unf:#ff6b6b;--unfbg:rgba(255,107,107,.14);
+--gold:#ffd54a;--seq:#e2a14a}
+*{box-sizing:border-box}html,body{margin:0}
+body{font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Calibri,Roboto,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+header{background:#0f1830;border-bottom:1px solid var(--line);padding:12px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+header h1{font-size:20px;margin:0;font-weight:700;letter-spacing:.2px}
+header .sub{color:var(--mut);font-size:13px}
+nav.tabs{display:flex;gap:4px;padding:0 20px;background:#0f1830;border-bottom:1px solid var(--line);overflow-x:auto}
+nav.tabs button{background:none;border:0;border-bottom:3px solid transparent;color:var(--mut);font:inherit;font-weight:700;padding:10px 14px;cursor:pointer;white-space:nowrap}
+nav.tabs button.on{color:var(--ink);border-bottom-color:var(--bf)}
+.page{display:none}.page.on{display:block}
+.wrap{max-width:1480px;margin:0 auto;padding:14px 16px 40px}
+main{display:grid;grid-template-columns:1fr 400px;gap:14px}
+@media(max-width:1100px){main{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--card2);flex-wrap:wrap}
+.seg button{border:0;background:transparent;padding:9px 14px;font:inherit;cursor:pointer;color:var(--ink);border-right:1px solid var(--line);text-align:left}
+.seg button:last-child{border-right:0}
+.seg button small{display:block;color:var(--mut);font-size:12px}
+.seg.bf button.on{background:var(--bf2);color:#fff}.seg.bf button.on small{color:#dbe4f3}
+.seg.rf button.on{background:#b3262b;color:#fff}.seg.rf button.on small{color:#fbdada}
+.seg button.dim{color:#7d8899}.seg button.dim small{color:#667184}
+.lbl{font-size:12px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
+.btn{border:1px solid var(--line);background:var(--card2);color:var(--ink);border-radius:8px;padding:9px 12px;font:inherit;cursor:pointer}
+.btn:hover{border-color:var(--bf)}.btn.primary{background:var(--bf2);color:#fff;border-color:var(--bf2);min-width:104px}
+select.btn{padding:8px}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
+@media(max-width:800px){.tiles{grid-template-columns:repeat(2,1fr)}}
+.tile{border-radius:10px;padding:10px 12px;border:1px solid var(--line);background:var(--card2)}
+.tile .k{font-size:12px;color:var(--mut);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.tile .v{font-size:22px;font-weight:800;margin-top:2px}
+.tile .s{font-size:13px;color:var(--mut)}
+.FAVOURABLE{background:var(--favbg);border-color:rgba(111,208,140,.45)}.FAVOURABLE .v{color:var(--fav)}
+.CONTESTED{background:var(--conbg);border-color:rgba(242,184,75,.45)}.CONTESTED .v{color:var(--con)}
+.UNFAVOURABLE{background:var(--unfbg);border-color:rgba(255,107,107,.45)}.UNFAVOURABLE .v{color:var(--unf)}
+.headline{margin-top:10px;background:var(--gold);color:#111;border-radius:8px;padding:8px 12px;font-weight:700}
+/* clock + timeline */
+.clock{display:flex;align-items:center;gap:14px;margin-top:12px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card2);flex-wrap:wrap}
+.clock .day{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums;min-width:120px}
+.clock .date{font-size:15px;color:var(--mut);font-variant-numeric:tabular-nums}
+.clock .ph{font-weight:700}
+.clock .prog{flex:1;min-width:160px;height:8px;background:#0b111b;border-radius:6px;overflow:hidden;border:1px solid var(--line)}
+.clock .prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--bf2),var(--bf));transition:width .25s linear}
+.toast{margin-top:8px;border-left:4px solid var(--gold);background:rgba(255,213,74,.08);padding:6px 10px;border-radius:6px;font-size:14px;min-height:20px}
+.tlscroll{overflow-x:auto;margin-top:10px;padding-bottom:4px}
+.tl{position:relative;min-width:1180px;padding:4px 0 6px}
+.axis{position:relative;height:36px;border-bottom:1px solid var(--line);font-size:11.5px;color:var(--mut)}
+.tick{position:absolute;top:0;transform:translateX(-50%);white-space:nowrap;text-align:center;line-height:1.25}
+.tick b{color:var(--ink);font-weight:700}
+.tick.minor{top:24px;height:12px;border-left:1px solid var(--line);transform:none}
+.lane{position:relative;height:30px;margin-top:6px}
+.lname{position:absolute;left:0;top:-14px;font-size:10px;color:var(--mut);font-weight:700;letter-spacing:.4px;text-transform:uppercase}
+.bar{position:absolute;height:26px;top:2px;border-radius:6px;font-size:12px;color:#fff;display:flex;align-items:center;justify-content:center;
+overflow:hidden;white-space:nowrap;padding:0 6px;cursor:pointer;border:2px solid transparent;transition:transform .15s,opacity .2s}
+.bar:hover{transform:translateY(-1px)}.bar.sel{border-color:#fff;box-shadow:0 0 0 2px var(--gold)}
+.plan{background:#34496f}.play{background:var(--bf2)}.bar.fut{opacity:.45}
+.mark{position:absolute;bottom:-4px;width:0;border-left:2px dashed}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--mut);margin-top:10px}.legend i{display:inline-block;width:0;height:12px;border-left:2px dashed;margin-right:5px;vertical-align:-2px}
+.star{position:absolute;top:2px;transform:translateX(-50%);font-size:20px;color:#8a7a3a;cursor:pointer;transition:color .2s,transform .2s}
+.star.hit{color:var(--gold);transform:translateX(-50%) scale(1.15)}
+.star b{font-size:9px;color:#111;position:absolute;left:50%;top:6px;transform:translateX(-50%)}
+.playhead{position:absolute;top:0;bottom:0;width:0;border-left:2px solid var(--gold);pointer-events:none;transition:left .25s linear;z-index:3}
+.playhead span{position:absolute;top:-2px;left:4px;background:var(--gold);color:#111;font-size:11px;font-weight:800;padding:1px 6px;border-radius:4px;white-space:nowrap}
+/* moves */
+.phasehead{display:flex;align-items:center;gap:10px;margin-top:4px;flex-wrap:wrap}
+.phasehead h2{font-size:18px;margin:0}
+.moves{display:grid;grid-template-columns:1fr 24px 1fr 24px 1fr;gap:0;margin-top:10px;align-items:stretch}
+.mv{border-radius:10px;padding:10px 12px;border:1px solid var(--line);background:var(--card2)}
+.mv h3{margin:0 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.6px}
+.mv.us{border-top:5px solid var(--bf)}.mv.us h3{color:var(--bf)}
+.mv.them{border-top:5px solid var(--rf);background:var(--rfbg)}.mv.them h3{color:var(--rf)}
+.arr{display:flex;align-items:center;justify-content:center;color:#5f6b80;font-size:20px}
+@media(max-width:900px){.moves{grid-template-columns:1fr}.arr{transform:rotate(90deg);height:22px}}
+.below{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+@media(max-width:900px){.below{grid-template-columns:1fr}}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--bf);color:var(--bf);background:var(--bfbg);border-radius:999px;padding:3px 10px;font-weight:700;font-size:13px;cursor:pointer}
+.chip.seq{border-color:var(--seq);color:var(--seq);background:rgba(226,161,74,.12)}
+.drawer{margin-top:10px;border:1px solid var(--line);border-left:5px solid var(--bf);border-radius:8px;padding:10px 12px;background:var(--card2);display:none}
+.drawer.on{display:block}
+.drawer dl{display:grid;grid-template-columns:130px 1fr;gap:4px 10px;margin:6px 0 0}.drawer dt{font-weight:700;color:var(--mut)}.drawer dd{margin:0}
+/* side */
+.grid22{display:grid;grid-template-columns:auto repeat(4,minmax(0,1fr));gap:4px;font-size:11px;align-items:stretch}
+.grid22 .h{font-weight:700;color:var(--mut);text-align:center;font-size:12px}
+.cell{border-radius:8px;padding:6px 3px;cursor:pointer;border:2px solid transparent;text-align:center;font-weight:800;font-size:13px}
+.cell small{display:block;font-weight:600;font-size:10px;color:var(--ink)}
+.cell.sel{border-color:#fff}
+.risk{border-left:4px solid var(--rf);padding:6px 8px;margin:6px 0;background:var(--card2);border-radius:6px;font-size:13px}
+.risk .t{font-size:11px;font-weight:800;color:var(--rf);text-transform:uppercase}
+.dp{font-size:13px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;margin:6px 0;cursor:pointer;background:var(--card2)}
+.dp.sel{border-color:var(--bf);background:var(--bfbg)}
+.dp .d{font-size:12px;color:var(--mut);margin-top:4px;display:none}.dp.sel .d{display:block}
+/* what-if */
+.wi .sl{margin:10px 0}
+.wi label{display:flex;justify-content:space-between;font-size:13px;font-weight:700}
+.wi label span{color:var(--bf)}
+input[type=range]{width:100%;accent-color:var(--bf)}
+input[type=checkbox]{accent-color:var(--bf)}
+.wi .hint,.hint{font-size:11px;color:var(--mut)}
+.wi .fx{font-size:13px;margin-top:8px;padding:8px;background:var(--card2);border-radius:8px;border:1px dashed var(--line)}
+.wi .fx li{margin:2px 0}
+.note{font-size:12px;color:var(--mut)}
+.badge{display:inline-block;background:rgba(242,184,75,.15);border:1px solid var(--con);color:var(--con);font-weight:800;font-size:12px;border-radius:6px;padding:2px 8px;vertical-align:middle}
+.badge.out{background:#1c2432;border-color:#4a5568;color:#aab3c2}
+.badge.model{background:rgba(91,141,239,.14);border-color:var(--bf);color:var(--bf)}
+.badge.deck{background:rgba(111,208,140,.12);border-color:var(--fav);color:var(--fav)}
+.assess{display:none}.assess.on{display:block}.wgonly.off{display:none}
+.scr{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.scr div{border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--card2);font-size:13px}.scr b{display:block;font-size:12px;color:var(--mut);text-transform:uppercase}
+.v-Yes{color:var(--fav);font-weight:800}.v-No{color:var(--rf);font-weight:800}.v-Partly{color:var(--con);font-weight:800}
+.wi.disabled{opacity:.45;pointer-events:none}
+.wi h4{margin:12px 0 2px;font-size:12px;color:var(--bf);text-transform:uppercase;letter-spacing:.5px;border-top:1px solid var(--line);padding-top:8px}
+.gauge{height:8px;background:#0b111b;border-radius:6px;overflow:hidden;margin-top:4px;border:1px solid var(--line)}.gauge i{display:block;height:100%}
+details summary{cursor:pointer;font-weight:700}
+kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;font-size:12px;background:var(--card2);color:var(--ink)}
+/* compare */
+.cmp{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
+.cmp th,.cmp td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:center;vertical-align:middle}
+.cmp th{font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:.4px;font-weight:700}
+.cmp td:first-child,.cmp th:first-child{text-align:left}
+.cmp td.m{font-weight:700}.cmp td.m small{display:block;font-weight:400;color:var(--mut);font-size:12px}
+.cmp .win{background:var(--favbg);color:var(--fav);font-weight:800;border-radius:6px}
+.cmp .lose{color:var(--unf)}
+.cmp .eq{color:var(--mut)}
+.cmp .grp th{background:var(--card2)}
+.cmp .o1{color:var(--bf)}.cmp .o2{color:#c3a6ff}
+.score{display:flex;gap:12px;flex-wrap:wrap;margin:10px 0}
+.score .tile{flex:1;min-width:200px}
+.bars2{display:flex;flex-direction:column;gap:3px;min-width:120px}
+.bars2 div{height:7px;border-radius:4px}
+.tblwrap{overflow-x:auto}
+.ms{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-top:8px}
+.ms .sl{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.ms label{display:flex;justify-content:space-between;font-size:13px;font-weight:700}.ms label span{color:var(--bf)}
+/* assumptions */
+.as-grp{margin-top:14px}
+.as-grp h3{font-size:14px;margin:0 0 6px;color:var(--bf);text-transform:uppercase;letter-spacing:.5px}
+.as{display:grid;grid-template-columns:1fr;gap:6px}
+.as .it{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:14px}
+.as .it.crit{border-left:4px solid var(--rf)}
+.as .it .bw{font-size:12px;color:var(--mut);margin-top:3px}
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.filters input[type=search]{background:var(--card2);border:1px solid var(--line);border-radius:8px;color:var(--ink);padding:8px 10px;font:inherit;min-width:240px}
+.howto ol{padding-left:20px}.howto li{margin:8px 0}
+.howto h3{margin:18px 0 6px;color:var(--bf)}
+</style>
+</head>
+<body>
+<header>
+  <h1>XTR 2 · Syndicate 1 · Wargame Dashboard</h1>
+  <div class="sub">OPS EPIC MONGOOSE (MSO 1) · OCAs against RAVENLAND ECAs · action → reaction → counter-action</div>
+</header>
+<nav class="tabs" id="tabs">
+  <button data-t="wg" class="on">Wargame</button>
+  <button data-t="cmp">OCA 1 vs OCA 2 · the numbers</button>
+  <button data-t="as">Assumptions</button>
+  <button data-t="how">How to use</button>
+</nav>
+
+<!-- ============ WARGAME ============ -->
+<div class="page on" id="p-wg"><div class="wrap">
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <div><div class="lbl">Own course of action</div><div class="seg bf" id="ocaSeg"></div></div>
+      <div><div class="lbl">Enemy course of action</div><div class="seg rf" id="ecaSeg"></div></div>
+      <div class="row">
+        <button class="btn" id="prev" title="Previous phase (←)">◀ Phase</button>
+        <button class="btn primary" id="play" title="Play / pause (space)">▶ Play</button>
+        <button class="btn" id="next" title="Next phase (→)">Phase ▶</button>
+        <select class="btn" id="speed" title="Play speed"><option value="900">Slow</option><option value="500" selected>Normal</option><option value="220">Fast</option></select>
+      </div>
+    </div>
+    <div class="tiles" id="tiles"></div>
+    <div class="headline" id="headline"></div>
+    <div class="clock wgonly" id="clockbox">
+      <div><div class="lbl" style="margin:0">Campaign clock</div><div class="day" id="cDay">D-14</div></div>
+      <div><div class="date" id="cDate"></div><div class="ph" id="cPh"></div></div>
+      <div class="prog" title="Progress from D-14 to D+34"><i id="cProg"></i></div>
+    </div>
+    <div class="toast wgonly" id="toast"></div>
+    <div class="tlscroll"><div class="tl" id="tl"></div></div>
+  </div>
+
+  <main style="margin-top:14px">
+  <section>
+    <div class="card assess" id="assess"></div>
+    <div class="card wgonly" id="wgcard">
+      <div class="phasehead"><span class="lbl" id="phaseIdx" style="margin:0"></span><h2 id="phaseName"></h2></div>
+      <div class="moves">
+        <div class="mv us"><h3>Our action</h3><div id="mvA"></div></div>
+        <div class="arr">➜</div>
+        <div class="mv them"><h3 id="mvRh">RF reaction</h3><div id="mvR"></div></div>
+        <div class="arr">➜</div>
+        <div class="mv us"><h3>Our counter-action</h3><div id="mvC"></div></div>
+      </div>
+      <div class="below">
+        <div class="mv"><h3 style="color:var(--mut)">Conditions recorded</h3><div id="mvK"></div></div>
+        <div class="mv"><h3 style="color:var(--mut)">Outcome</h3><div id="mvO"></div></div>
+      </div>
+      <div style="margin-top:10px"><div class="lbl">Branches and sequels triggered (click for the register entry · * added in the wargame, not on the LOO slides)</div><div class="chips" id="chips"></div></div>
+      <div class="drawer" id="drawer"></div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <details><summary>Method and definitions</summary>
+        <p id="method" style="white-space:pre-line;font-size:13px"></p>
+        <p class="note">Branch: leaves and rejoins the same line of operation. Sequel: a new line to a different objective (SAF JPP Handbook 4-19d). Branch, sequel, DP and DPT numbers follow the OCA 1 and OCA 2 line-of-operation slides in the submission deck.</p>
+      </details>
+    </div>
+  </section>
+
+  <aside>
+    <div class="card">
+      <div class="lbl">All pairings (D+30 result)</div>
+      <div class="grid22" id="grid"></div>
+      <div class="note" id="bluf" style="margin-top:8px"></div>
+    </div>
+
+    <div class="card wi" id="wi" style="margin-top:14px">
+      <div class="lbl">What-if: planning assumptions</div>
+      <div class="note">Planning sensitivity on the selected wargamed pairing, not a new wargame. Delays move handover day for day. Strike, PGM and loss sliders are relative to plan. These sliders also drive the <b>OCA 1 vs OCA 2</b> tab.</div>
+      <h4>Time and force</h4>
+      <div class="sl"><label>4 Div build-up <span id="v_bu"></span></label><input type="range" id="s_bu" min="5" max="12" step="1" value="7"><div class="hint">~7 days to mass 4 Div's main body in west GL</div></div>
+      <div class="sl"><label>Extra days the lift is held <span id="v_hold"></span></label><input type="range" id="s_hold" min="0" max="4" step="1" value="0"><div class="hint">B5 (OCA 1, capped at 2 days) · B8 (OCA 2, first echelon held at sea)</div></div>
+      <div class="sl"><label>Extra days to clear the MI mine lane <span id="v_mcm"></span></label><input type="range" id="s_mcm" min="0" max="8" step="1" value="0"><div class="hint">Costs time only once it eats MI's slack before handover</div></div>
+      <div class="sl"><label>Force ratio at the point of attack <span id="v_fr"></span></label><input type="range" id="s_fr" min="2" max="4" step="0.5" value="3"><div class="hint">3:1 at the point of attack, before strikes degrade 301 Div</div></div>
+      <h4>Strike</h4>
+      <div class="sl"><label>Weapon hit rate vs plan <span id="v_hit"></span></label><input type="range" id="s_hit" min="50" max="120" step="5" value="100"><div class="hint">Lower hit rate: more strikes per target, slower OE2 and more PGMs used</div></div>
+      <div class="sl"><label>Strike sorties vs plan <span id="v_sor"></span></label><input type="range" id="s_sor" min="50" max="120" step="5" value="100"><div class="hint">Daily strike sorties against plan</div></div>
+      <div class="sl"><label>Tankers available <span id="v_tk"></span></label><input type="range" id="s_tk" min="4" max="8" step="1" value="8"><div class="hint">4 KC-10A at TINA + 4 KC-135 at SPENCER (X1EF Table 6) set the sortie ceiling</div></div>
+      <div class="sl"><label>Extra days to neutralise RF launchers <span id="v_oe2"></span></label><input type="range" id="s_oe2" min="0" max="6" step="1" value="0"><div class="hint">Launchers hidden or moved; the shuttle waits (DPT3)</div></div>
+      <div class="sl"><label>ISR days to find moved launchers <span id="v_isr"></span></label><input type="range" id="s_isr" min="0" max="6" step="1" value="0"><div class="hint">Full effect in ECA B, where launchers leave JORDON before D; half effect in ECA A</div></div>
+      <div class="sl"><label>PGM stock at start <span id="v_pgm"></span></label><input type="range" id="s_pgm" min="50" max="100" step="5" value="80"><div class="hint">80% readiness (S3 para 5b). 25% of PGMs held for the decisive phase</div>
+        <div class="gauge"><i id="g_pgm"></i></div><div class="hint" id="t_pgm"></div></div>
+      <h4>RF air threat</h4>
+      <div class="sl"><label>RAF sortie generation vs plan <span id="v_raf"></span></label><input type="range" id="s_raf" min="60" max="140" step="10" value="100"><div class="hint">More RAF sorties pull BF sorties into counter-air; air superiority comes later</div></div>
+      <div class="sl"><label>RF SAM effectiveness vs plan <span id="v_sam"></span></label><input type="range" id="s_sam" min="60" max="140" step="10" value="100"><div class="hint">SA-20B and other SAMs: more SEAD per strike package and more aircraft lost</div></div>
+      <h4>Losses</h4>
+      <div class="sl"><label>Extra lift lost before landing <span id="v_lift"></span></label><input type="range" id="s_lift" min="0" max="50" step="5" value="0"><div class="hint">On top of the expected loss (see the numbers tab). Lost hulls are not replaced by D+30 (BF CV2b)</div></div>
+      <div class="sl"><label>Lift needed to land (floor) <span id="v_floor"></span></label><input type="range" id="s_floor" min="50" max="90" step="5" value="70"><div class="hint">Planning assumption: the deck gives no landing floor</div></div>
+      <div class="sl"><label>Extra aircraft lost per week <span id="v_air"></span></label><input type="range" id="s_air" min="0" max="10" step="1" value="0"><div class="hint">On top of the base attrition rate; cuts sorties over the strike campaign</div></div>
+      <h4>Environment and RF reinforcement</h4>
+      <div class="sl"><label>Days lost to sea state <span id="v_sea"></span></label><input type="range" id="s_sea" min="0" max="5" step="1" value="0"><div class="hint">Sep–Nov inter-monsoon (X1EF p2B-1); landing, MCM and helicopter windows</div></div>
+      <div class="sl"><label>102 Corps can deploy from <span id="v_102"></span></label><input type="range" id="s_102" min="10" max="20" step="1" value="15"><div class="hint">Given: 30 Oct (D+15). Full effect ~19 days later (96 h to mobilise, then 15 days)</div></div>
+      <h4>RF and RL behaviour</h4>
+      <div class="sl"><label style="justify-content:flex-start;gap:8px"><input type="checkbox" id="s_react" checked> RF reacts to FRACTURE (OCA 2)</label></div>
+      <div class="sl"><label style="justify-content:flex-start;gap:8px"><input type="checkbox" id="s_terms"> RL accepts the withdrawal terms (S1 / S4)</label></div>
+      <div class="row"><button class="btn" id="reset">Reset to wargame</button></div>
+      <div class="fx" id="fx"></div>
+      <details style="margin-top:8px"><summary class="note">How the model works</summary><div class="note" style="margin-top:6px">
+        Handover = wargame handover + slip. Slip = delays before the assault (build-up − 7, lift hold, launcher days, ISR days (full in ECA B, half in ECA A), strike slip, sea-state days) + max(0, MCM days − MI slack). OCA 1 masses 4 Div a day before its assault (shuttle ~D+8 + 7 days = ~D+15 against the D+16 assault), so its first day of pre-assault delay is absorbed. OCA 2 launches FRACTURE the day 4 Div is massed, so it has no spare day.<br>
+        Strike slip = strike-led days on the critical path × (1 ÷ effectiveness − 1). OCA 1: SHOCK to OE2 (7 days in ECA A, 10 in ECA B); ISOLATE runs to the fixed D+16 assault date, so small delays there are absorbed. OCA 2: OE2 (3 / 10 days) plus the 5-day EXPOSE & NEUTRALISE, which gates ROLL UP with no slack. When strikes beat plan, OCA 1 gains nothing in ECA A because its assault is tied to the D+16 terms deadline, and at most the ~3 days SHOCK ran late in ECA B. OCA 2 gains only on OE2, because EXPOSE & NEUTRALISE is a fixed window. When launchers survive longer, OCA 2's first echelon, already at sea in BrahMos reach, loses lift (model rate); OCA 1's dispersed lift only waits. Effectiveness = hit rate × min(sorties, tankers ÷ 8) × (1 − 2 × weekly aircraft loss × SAM factor) × (100 ÷ RAF generation) × (100 ÷ SAM effectiveness), with the last two capped at 1.25.<br>
+        102 Corps full effect = deploy day + 19. The wargame already assumed deployment from 30 Oct (D+15); deploying 2 or more days earlier caps a Favourable result at Contested (DP5 at risk), and full effect by D+30 means DP7 is not met.<br>
+        PGM reserve left = stock ÷ 80% − 75% ÷ hit rate, shown against the planned 25% reserve.<br>
+        Lift left below the floor triggers S3 (OCA 1) or S2 (OCA 2): isolation-led, D+30 missed.<br>
+        Rating: 2+ days in hand favourable; 0–1 contested; late unfavourable (wargame method).</div></details>
+    </div>
+
+    <div class="card" style="margin-top:14px"><div class="lbl">Key risks · <span id="riskOca"></span></div><div id="risks"></div></div>
+    <div class="card" style="margin-top:14px"><div class="lbl">Decision points · <span id="dpOca"></span> (click for PIR / FFIR)</div><div id="dps"></div></div>
+  </aside>
+  </main>
+</div></div>
+
+<!-- ============ COMPARE ============ -->
+<div class="page" id="p-cmp"><div class="wrap">
+  <div class="card">
+    <div class="row" style="justify-content:space-between;align-items:flex-start">
+      <div>
+        <h2 style="margin:0 0 4px">OCA 1 vs OCA 2 · the numbers</h2>
+        <div class="note" style="max-width:900px">Each cell is <b>2,000 simulated runs</b> of the wargame timeline. The runs vary the assumptions around the what-if slider settings. Timings come from the wargame. Loss, attrition and casualty figures come from the <span class="badge model">model</span> settings below, which are <b>planning assumptions, not wargame results</b>. Change them and every number updates.</div>
+      </div>
+      <div style="min-width:260px">
+        <div class="lbl">Weight on ECA B (most dangerous)</div>
+        <input type="range" id="w_b" min="0" max="100" step="10" value="50"><div class="hint" id="t_wb"></div>
+      </div>
+    </div>
+    <div class="score" id="score"></div>
+    <div class="headline" id="cmpBluf"></div>
+    <div class="tblwrap" style="margin-top:12px"><table class="cmp" id="cmpT"></table></div>
+    <p class="note">Green = the better OCA on that measure (a gap under 2 points or 0.2 is shown as level). Weighted = ECA A and ECA B combined by the weight above.</p>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <div class="lbl">Model settings <span class="badge model">planning assumptions · not in the deck</span></div>
+    <div class="note">These set the numbers that the wargame does not give. Each one is tied to a finding in the deck, shown in its hint.</div>
+    <div class="ms" id="ms"></div>
+    <div class="row" style="margin-top:10px"><button class="btn" id="msReset">Reset model settings</button></div>
+    <details style="margin-top:10px"><summary class="note">How each number is worked out</summary><div class="note" style="margin-top:6px;line-height:1.6">
+      <b>Chance of success by D+30</b> = share of runs in which GL, WATSONS and MI are handed over by D+30, the lift left is at or above the landing floor, and PGMs last. Each run draws handover inside the wargame range. It then varies build-up (±2 days), strike effectiveness (±15%), sea state (0 days in 80% of runs, 1–2 days otherwise) and mine-lane overrun (0–2 days), plus the what-if slider settings. Lift holds and moved launchers in ECA B are already in the wargame result, so they are not added again.<br>
+      <b>Lift lost</b> = a draw inside the model range for that OCA and ECA, plus the what-if extra. For OCA 2 only, add the model rate for each extra day the launchers survive, because its first echelon is already at sea in BrahMos reach.<br>
+      <b>Aircraft lost</b> = base weekly attrition × days in contested air ÷ 7, scaled by RAF generation and SAM effectiveness. Air superiority comes ~D+7 in OCA 1 and ~D+17 in OCA 2 (deck).<br>
+      <b>Force ratio at the assault</b> = force ratio ÷ (1 − 301 Div degraded before the assault).<br>
+      <b>4 Div casualties</b> use Lanchester's square law with the defender 3× as effective in prepared positions. 301 Div breaks at 40% losses. Attacker losses = 1 − √(1 − 0.64 × 3 ÷ ratio²).<br>
+      <b>Loss-exchange ratio</b> = RF losses ÷ BF losses in the assault on 301 Div (40% of 301 Div ÷ 4 Div losses).<br>
+      <b>PGM drawdown</b> = 75% of stock planned by the decisive phase ÷ hit rate × (80% ÷ stock), + 2% of stock per extra strike day.
+    </div></details>
+  </div>
+</div></div>
+
+<!-- ============ ASSUMPTIONS ============ -->
+<div class="page" id="p-as"><div class="wrap">
+  <div class="card">
+    <h2 style="margin:0 0 4px">Assumptions</h2>
+    <div class="note">Planning assumptions from the submission deck's register, plus the model settings that the numbers tab adds. <span class="badge deck">deck</span> = in the deck. <span class="badge model">model</span> = added for the numbers, not in the deck. Red edge = critical: it could change the OCAs.</div>
+    <div class="filters" style="margin-top:10px">
+      <input type="search" id="asQ" placeholder="Search assumptions…">
+      <label class="note"><input type="checkbox" id="asCrit"> Critical only</label>
+    </div>
+    <div id="asList"></div>
+  </div>
+</div></div>
+
+<!-- ============ HOW TO USE ============ -->
+<div class="page" id="p-how"><div class="wrap"><div class="card howto" style="max-width:980px">
+  <h2 style="margin:0">How to use this dashboard</h2>
+  <h3>1 · Pick a pairing</h3>
+  <ol>
+    <li>Choose <b>our course of action</b> (OCA 1 or 2; OCAs 3–5 are unfavourable because they failed screening) and the <b>enemy's</b> (ECA A most probable, ECA B most dangerous; C and D are unfavourable to RF, so they were assessed, not wargamed). You can also click any cell in the <b>All pairings</b> grid.</li>
+    <li>The four tiles give the D+30 result, the handover date, the days in hand and whether RF is still a threat at D+30 (DP7).</li>
+  </ol>
+  <h3>2 · Play the wargame</h3>
+  <ol>
+    <li>Press <b>▶ Play</b> (or <kbd>space</kbd>). The campaign clock runs day by day from D-14. The gold playhead moves along the timeline, and each phase opens as the clock reaches it.</li>
+    <li>When the clock passes a decision point, the ★ lights up and the decision shows above the timeline.</li>
+    <li>Use <b>◀ Phase / Phase ▶</b> (or <kbd>←</kbd> <kbd>→</kbd>) to jump phase by phase while you talk. <b>Speed</b> sets the pace. Click a bar on the timeline to open that phase.</li>
+    <li>Each phase shows <b>our action → RF's reaction → our counter-action</b>, the conditions and the outcome. Click a <b>B</b> (branch) or <b>S</b> (sequel) chip to see its trigger, decision point and action.</li>
+  </ol>
+  <h3>3 · Test an assumption (what-if)</h3>
+  <ol>
+    <li>Move a slider on the right, such as build-up, tankers, SAM effectiveness, sea state or 102 Corps' deploy date. The tiles, handover date and triggered branches update, and the box below the sliders says why.</li>
+    <li><b>Reset to wargame</b> returns to the syndicate's wargame result.</li>
+  </ol>
+  <h3>4 · Compare the OCAs</h3>
+  <ol>
+    <li>Open <b>OCA 1 vs OCA 2 · the numbers</b>. It runs both OCAs against both ECAs 2,000 times with your current slider settings. It gives the chance of success by D+30, expected handover, lift lost, aircraft lost, force ratio at the assault, 4 Div casualties, loss-exchange ratio and PGM drawdown.</li>
+    <li>Set the <b>weight on ECA B</b> to show how much you plan against the most dangerous ECA.</li>
+    <li>Loss and attrition figures come from labelled model settings, not the wargame. Say so if asked, and change the setting live to show how robust the result is.</li>
+  </ol>
+  <h3>5 · Check an assumption</h3>
+  <ol><li>The <b>Assumptions</b> tab lists the deck's planning assumptions and the model settings. Search it, or tick <i>Critical only</i>.</li></ol>
+  <h3>Keys</h3>
+  <p><kbd>space</kbd> play/pause · <kbd>←</kbd> <kbd>→</kbd> phase · <kbd>1</kbd>–<kbd>5</kbd> OCA · <kbd>A</kbd>–<kbd>D</kbd> ECA · <kbd>N</kbd> numbers tab · <kbd>W</kbd> wargame tab</p>
+  <h3>Suggested demo (2 minutes)</h3>
+  <ol>
+    <li>OCA 1 vs ECA B: press Play and stop at the shuttle decision (DPT3) to show how the lift is protected.</li>
+    <li>Switch to OCA 2 vs ECA B: the lift masses at MONACO inside BrahMos reach, and handover is ~D+30 with no margin.</li>
+    <li>Open the numbers tab: OCA 1 comes out ahead on chance of success, lift lost, aircraft lost and casualties.</li>
+    <li>Move <i>RF SAM effectiveness</i> to 140%, or <i>102 Corps</i> to D+12, to show where the plan breaks and which branch catches it.</li>
+  </ol>
+</div></div></div>
+
+<script id="data" type="application/json">{"pairings": {"1A": {"rows": [{"phase": "PH 0-1 SHAPE, SHOCK (D-14 to D+7)", "range": [-14, 7], "action": "From D, Strike TF hits RF jammers, radars, missile launchers, C2 and RAF air bases (OT6-OT9).", "reaction": "Our strikes into RL trigger an RF counter-strike on BAU air bases and ports by BrahMos missiles and the RAF (RDPT4). RF disperses its launchers.", "counter": "Our amphibious lift stays dispersed. Ground-based air defence and fighters defend the bases. Strike TF re-strikes the launchers.", "conditions": "RF counter-strikes once BF strikes RL. The 4 Div shuttle needs 72 hours without an RF launch (DPT3), or the lift waits at NOKKIA (B5).", "outcome": "The lift survives. About D+7, RF's long-range strike is neutralised and BF has air superiority. Dispersed NSM launchers may survive.", "branches": "B5"}, {"phase": "PH 2 ISOLATE (D+7 to D+13): sea control", "range": [7, 13], "action": "BN, maritime patrol aircraft and BAF neutralise RN NTF 1 (OT11). BAF strikes the RINGTON naval station (OT12).", "reaction": "RN NTF 1, ECA A's main effort, engages BF near WATSONS. RF resupplies its GL garrisons by air.", "counter": "Shuttle runs pause if a ship is lost or RF ships come within 50 km (B7). BAF interdicts RF air resupply into RIVERSIDE AB (OT13).", "conditions": "Isolation is declared complete about D+13 (DPT6) once RN NTF 1 cannot contest WATSONS or MI (OE6) and RINGTON's piers are unusable.", "outcome": "RN NTF 1 is neutralised about D+13. RL cannot escort its 1 Nov oil export from WATSONS (RDP5).", "branches": "B7"}, {"phase": "PH 2 ISOLATE (from DPT3, ~D+8): 4 Div shuttle", "range": [8, 13], "action": "From about D+8 (DPT3), ships shuttle 4 Div from NOKKIA to GOLDLAND AB & NB.", "reaction": "Our landing prompts RF to load 303 Div and 304 Armr Regt onto landing ships at STRATFORD, to cross to GL (RDPT1).", "counter": "Strike TF and BN submarines strike the landing ships at STRATFORD and on the 106 km sea lane to GL (B3).", "conditions": "RF acts once BF lodges in GL. BF acts when intelligence sees landing ships loading at STRATFORD.", "outcome": "The crossing is disrupted. No RF formation lands in GL. From about D+12, RF reinforcements are kept out of GL (DP5).", "branches": "B3"}, {"phase": "PH 3 OPEN (D+13 to D+16)", "range": [13, 16], "action": "About D+13 (DPT6), RL receives withdrawal terms with a D+16 deadline. BN clears a lane through the mines to MI. 4 Div masses in west GL (DP10).", "reaction": "RL lets the deadline pass. 102 Corps starts embarking at STRATFORD from 30 Oct.", "counter": "Strikes hit the ships embarking 102 Corps (B3). ASSAULT is prepared for the D+16 decision (DPT7).", "conditions": "ASSAULT starts on D+16 (DPT7) if the deadline has passed and RF has delivered nothing for 7 days. 4 Div must be massed (DP10).", "outcome": "The terms expire on D+16. RL does not accept them, so ASSAULT launches on time.", "branches": "S1"}, {"phase": "PH 4 ASSAULT (D+16 to D+26)", "range": [16, 26], "action": "4 Div attacks 301 Div. LB 203, RF's landing beach, is blocked. CDO TF and 81 BIB seize WATSONS.", "reaction": "301 Div defends in depth. RF counter-attacks WATSONS from RINGTON, about 38 km away (RDPT2).", "counter": "Strike TF re-strikes RINGTON AB. BAF covers WATSONS and 81 BIB holds it. The MI assault waits until CDO TF is freed (B10).", "conditions": "About D+20 (DPT8), if the attack is short of RIVERSIDE, the Joint reserve lands at the north beach or joins the main attack (B6).", "outcome": "WATSONS is held. MI is secured about D+20-22. By about D+24-26, 301 Div can no longer hold SPANNEL-CHELET.", "branches": "B10; B6"}, {"phase": "PH 5 RESTORE (D+26 to D+30)", "range": [26, 30], "action": "4 Div secures GL and GF take over (OT25). Strike TF strikes RF's remaining offensive capability (DP7).", "reaction": "102 Corps is fully equipped about 18 Nov. RF then decides whether to settle or attack METWELL (RDPT3).", "counter": "BF holds GL, WATSONS, MI and METWELL. Strike TF strikes 102 Corps and re-strikes RAF bases to D+30 (B4).", "conditions": "GL authority must control GL, WATSONS and MI by D+30 (DP15). The residual threat is judged against seven set tests (DP7).", "outcome": "GL, WATSONS and MI are handed over about D+26-28, with 2-4 spare days. METWELL is still threatened (DP7).", "branches": "B4; S4"}], "bar": "D+30: FAVOURABLE · DP7 residual RF threat: PARTLY MET — Met for restored GL: RF has no sea route there. RN NTF 1 was neutralised about D+13 and the STRATFORD crossings were struck (B3). Not met for BAU: 102 Corps reaches full effect about D+34 and can then attack METWELL by land.", "headline": "RN NTF 1, ECA A's main effort, is neutralised about D+13. GL is handed over about D+26-28. RF's most dangerous reaction is its sealift from STRATFORD (B3).", "rating": "FAVOURABLE", "dp16": "PARTLY MET", "notes": "[J3 (DJO)] CDF, OCA 1 against ECA A, the most probable, is favourable. Handover is about D+26 to D+28, with two to four spare days. The red box gives the reason. RN NTF 1, the RF naval task force that is ECA A's main effort, is neutralised about D+13. The third row shows RF's most dangerous reaction. Once 4 Div starts shuttling into GL about D+8, RF loads 303 Div and 304 Armr Regt onto landing ships at STRATFORD. A branch that strikes those ships in port and at sea, B3, disrupts the crossing. The bar above the red box shows DP7 partly met. RF has no sea route to restored GL, but 102 Corps can attack METWELL from about D+34. Branch B4 uses the spare days to keep striking it.\n\nWORKINGS\nSHOCK runs D to D+7 and ends when RF's long-range strike is neutralised (OE2) and BF has air superiority (DP3). The shuttle decision (DPT3) needs 72 h with no RF land-attack launch; otherwise B5 holds the lift at NOKKIA, capped at 2 days, and each day moves ASSAULT a day. Isolation is declared about D+13 (DPT6) once RN NTF 1 cannot contest WATSONS or MI (OE6) and RINGTON's piers are unusable. Terms go to RL about D+13 with a D+16 deadline. ASSAULT on D+16 (DPT7) needs 7 days with no RF delivery, so RF sea and air deliveries must stop by about D+9. B3 covers the ~106 km sea lane from STRATFORD to RIVERSIDE NB. RF can counter-attack WATSONS from RINGTON, ~38 km away; B10 holds WATSONS while the MI assault waits, and MI is secured about D+20-22. Refinement: RN NTF 1 held 50 km or more from the shuttle route at DPT3; DP7 is judged against seven set tests.\n\n", "summary": "FAVOURABLE\n\nGL, WATSONS and MI are handed to GL authority about D+26-28, with 2-4 spare days. \nRN NTF 1 is neutralised ~D+13. Strikes disrupt RF's sea crossing from STRATFORD.\n\nDP7 (residual RF threat at D+30): PARTLY MET"}, "1B": {"rows": [{"phase": "PH 0 SHAPE (D-14 to D) against RF PH 1-2", "range": [-14, 0], "action": "At RF's H-hour, our amphibious lift is dispersed and 4 Div is at MONACO. TDF guards mobilisation nodes, ports and C2 (OT28).", "reaction": "RF launches its pre-emptive attack (RDPT1). BrahMos missiles and the RAF strike our ports and air bases. NSR 33 SF Regt raids our C2.", "counter": "Ground-based air defence and fighters defend the bases. Strike TF strikes the launchers and RINGTON AB (B1).", "conditions": "RF strikes when BF mobilises or masses its lift (RDPT1). BF strikes are released at the first RF launch (B1).", "outcome": "Dispersal limits the loss of lift. We cannot size the loss. Base repairs reduce the sorties left for SHOCK.", "branches": "B1"}, {"phase": "Homeland line (H to ~D+10) against RF PH 2-3 METWELL attack", "range": [-7, 10], "action": "1 Div defends METWELL (OT1). 2 and 3 Div form the HQ 7 Corps reserve.", "reaction": "302 Div and 304 Armr Regt reach METWELL's south coast. TRG-300 launchers fire on 1 Div.", "counter": "HQ 7 Corps commits a reserve brigade beside 1 Div, with close air support (B8).", "conditions": "RF aims to reach METWELL's coast, the limit of its attack, about 4 days after H-hour (RDP3). BF counter-attacks once RF holds it (B8).", "outcome": "The coast is regained about D+8-10. 1 Div's line holds, so RF does not commit 303 Div (RDPT2).", "branches": "B8"}, {"phase": "PH 1 SHOCK (D to ~D+10) against RF PH 3 CONSOLIDATE", "range": [0, 10], "action": "Strike TF hits RF jammers, radars, missile launchers, C2 and RAF air bases (OT6-OT9).", "reaction": "RF re-strikes our lift and air bases. Its launchers fire from dispersed positions.", "counter": "The lift stays dispersed and Strike TF re-attacks launch areas. BAF splits its sorties between SHOCK, base defence and close air support at METWELL.", "conditions": "SHOCK ends when RF's long-range strike is neutralised (OE2). The tests are no land-attack launch for 72 hours and RAF under 4 sorties a day.", "outcome": "Moved launchers and split sorties delay the end of SHOCK (OE2) and air superiority (DP3) to about D+10.", "branches": "B5"}, {"phase": "PH 2 ISOLATE (~D+10 to ~D+16) against RF PH 3 CONSOLIDATE", "range": [10, 16], "action": "BN neutralises RN NTF 1 (OT11). From about D+11 (DPT3), the 4 Div shuttle sails with ASW escort (OT27).", "reaction": "The two Amur submarines attack the shuttle. 301 Div counter-attacks our lodgement in west GL.", "counter": "Shuttle runs pause while BN hunts the submarines (B7). GF and 4 Div defend the lodgement with close air support (B9).", "conditions": "The shuttle decision (DPT3) adds a test: both Amur submarines located. RF counter-attacks once BF is lodged in west GL.", "outcome": "301 Div's attack is held. Pauses for the submarines delay the massing of 4 Div in west GL (DP10) to about D+18.", "branches": "B7; B9"}, {"phase": "PH 3 OPEN (~D+16 to ~D+19) against RF PH 4 REINFORCE", "range": [16, 19], "action": "About D+16 (DPT6), RL receives withdrawal terms. BN clears a lane through the mines to MI. 4 Div masses in west GL (DP10).", "reaction": "102 Corps starts embarking at STRATFORD from 30 Oct (RDPT3). RL negotiates.", "counter": "Strike TF and BN submarines strike the landing ships at STRATFORD and on the 106 km sea lane to GL (B3).", "conditions": "ASSAULT starts about D+19 (DPT7) if the deadline has passed, RF has delivered nothing for 7 days, 4 Div is massed and enough lift remains.", "outcome": "ASSAULT launches about D+19, three days late. Enough lift remains to land.", "branches": "B3; S3"}, {"phase": "PH 4-5 ASSAULT, RESTORE (~D+19 to D+30) against RF PH 4 REINFORCE", "range": [19, 30], "action": "4 Div attacks 301 Div (OT18). CDO TF and 81 BIB seize WATSONS. MI is secured about D+22.", "reaction": "301 Div and the NSR defend without reinforcement. RL negotiates to keep GL, MI and WATSONS.", "counter": "About D+23 (DPT8), the joint reserve reinforces the main attack. Close air support rises to about 45% of sorties.", "conditions": "The reserve at NOKKIA is committed if the attack is short of RIVERSIDE (DPT8). Both tests are judged on 14 Nov (DP15, DP7).", "outcome": "301 Div cannot hold SPANNEL-CHELET by about D+29. Handover is about D+30, with no spare days.", "branches": "B4 (no time); S4; S2"}], "bar": "D+30: CONTESTED · DP7 residual RF threat: NOT MET — The launchers left JORDON before D, and we cannot confirm them destroyed. The RAF is only suppressed. 303 Div was never committed. 102 Corps reaches full effect about D+34. Handover about D+30 leaves no time for more strikes (B4).", "headline": "SHOCK ends about 3 days late while BF finds the launchers and regains METWELL's coast. GL is handed over about D+30, with no spare days.", "rating": "CONTESTED", "dp16": "NOT MET", "notes": "[J3 (DJO)] CDF, OCA 1 against ECA B, the most dangerous, is contested. Handover is about D+30, with no spare days. The red box at the bottom gives the reason. RF strikes first, before D. Its launchers leave JORDON, and BAF splits its sorties between strikes, base defence and close air support at METWELL. So SHOCK, our opening strike phase, ends about D+10, three days late. Dispersal limits the loss of lift, which we cannot size. The second row shows RF's attack on METWELL. A branch that commits a named 7 Corps reserve brigade, B8, retakes the coast about D+8 to D+10. ASSAULT launches about D+19. The bar above the red box shows DP7 not met. We cannot confirm the launchers destroyed, and no time is left for more strikes.\n\nWORKINGS\nRF's H-hour is assessed between D-7 and D. RF aims to reach METWELL's coast about 4 days after H (RDP3); 1 Div's line holds, so RF does not commit 303 Div (RDPT2). SHOCK ends on two tests: no RF land-attack launch for 72 h, and RAF under 4 sorties a day. The shuttle decision moves to about D+11 and adds a test that both Amur submarines are located; submarine pauses push 4 Div's massing to about D+18. Re-timed decisions: DPT6 ~D+16, DPT7 ~D+19, DPT8 ~D+23; otherwise S2, holding the ground at D+30. At DPT8 the joint reserve joins the main attack and close air support rises to about 45% of sorties. Refinements from this pairing: name a 2 or 3 Div brigade under HQ 7 Corps for B8, and add DPT1 so the War Council releases B1 strikes at the first RF launch. S3, lift below the level needed to land, was checked at DPT7; enough lift remained.\n\n", "summary": "CONTESTED\n\nGL, WATSONS and MI are handed over about D+29-30, with no spare days before D+30. \nRF moves its launchers before D and our sorties are split, so the opening strike phase (SHOCK) ends about 3 days late.\n\nDP7 (residual RF threat at D+30): NOT MET"}, "2A": {"rows": [{"phase": "PH 0 SHAPE (D-14 to D) v RF PH 1 FORTIFY", "range": [-14, 0], "action": "MAHAWA lift sails south. First echelon embarks at MONACO. Withdrawal demand published.", "reaction": "RF states its defence first. 301 Div digs in. RN NTF 1 inspects NOKKIA-bound shipping.", "counter": "ASW escorts MAHAWA lift in transit. ISR: pattern of life on STRATFORD LSTs, 303 Div.", "conditions": "RF waits for BF to strike RL (RDPT4). War Council strike authority given (DPT1).", "outcome": "No lift lost. First echelon embarks, able to land. METWELL, PRIDE held (DP1).", "branches": "None (B1 not triggered)"}, {"phase": "PH 1 PIERCE (D to D+3) v RF PH 2 DENY", "range": [0, 3], "action": "Strike TF hits RINGTON AB, RN NTF 3, STRATFORD LSTs. D+1 landing; CDO TF, 81 BIB seize WATSONS.", "reaction": "BrahMos and RAF strike BAU bases and NOKKIA (RDPT4). RF counter-attacks WATSONS (RDPT2).", "counter": "GBAD protects NOKKIA. Strike TF re-strikes RINGTON AB; 81 BIB holds WATSONS (B10).", "conditions": "DPT6: RINGTON AB denied, RN NTF 3 held. DPT2: METWELL coast held for WATSONS.", "outcome": "WATSONS secured ~D+2 (DP8). RL's 1 Nov oil export from WATSONS denied (RDP5).", "branches": "B10"}, {"phase": "PH 2 LODGE (D+3 to D+8) v RF PH 2 DENY", "range": [3, 8], "action": "NOKKIA shuttle ~D+3 (DPT3) once JORDON launcher kills confirmed (OE2). 4 Div and joint reserve land.", "reaction": "RF loads a 304 Armr Regt group onto LSTs at STRATFORD ~D+5 (RDPT1).", "counter": "At first sign of loading, Strike TF masses on the LSTs; BN submarines patrol the lane (B5).", "conditions": "RF acts once BF lodges in GL (D+1). BF acts on loading seen at STRATFORD.", "outcome": "RF abandons the crossing ~D+6 (est.). No RF unit lands in GL (DP5).", "branches": "B5"}, {"phase": "PH 3 FRACTURE (D+8 to D+13) v RF PH 2 DENY", "range": [8, 13], "action": "On D+8 (DPT9), 4 Div seizes RIVERSIDE AB & NB. Air assault takes LB 203 on D+9.", "reaction": "301 Div commits its counter-attack force, 904 Armour Inf Regt. RAF sorties over GL rise.", "counter": "Joint reserve blocks the counter-attack. CAS and interdiction strike 904 Regt (B11).", "conditions": "4 Div massed, air superiority (DP9, DP4). RF defends GL entry points.", "outcome": "RIVERSIDE and LB 203 held ~D+13. No RF delivery reaches GL for 72 h (DP10).", "branches": "B11; B12"}, {"phase": "PH 4 EXPOSE & NEUTRALISE (D+13-18): RF reacts", "range": [13, 18], "action": "From D+13 (DPT4), Comd Joint HQ retasks strikes daily onto reacting RF. 4 Div holds gains.", "reaction": "RN NTF 1 covers MI at sea. The RAF surges. BrahMos launchers fire again.", "counter": "BN and BAF neutralise RN NTF 1 (OT11). BAF counter-air. Launchers hit after firing.", "conditions": "102 Corps deployable from 30 Oct. BF has held RIVERSIDE NB, its landing port, since 28 Oct.", "outcome": "RN NTF 1 neutralised ~D+18 (OE6). 102 Corps stays in RL (est.).", "branches": "B14; B13; B6"}, {"phase": "PH 4 test case (D+13-18): RF does not react", "range": [13, 18], "action": "From D+13 (DPT4), ISR watches STRATFORD, RN NTF 1, RAF bases and launch areas.", "reaction": "RF keeps 303 Div, 304 Armr Regt, RN NTF 1 and the RAF in RL.", "counter": "From D+16, Strike TF returns to fixed deep targets; 25% munitions reserve released (B7).", "conditions": "No sign of an RF reaction for 72 hours after the D+13 decision.", "outcome": "GL handed over ~D+26 (est.). RF keeps its offensive forces (DP7 not met).", "branches": "B7; S1"}, {"phase": "PH 5 ROLL UP (D+18 to D+26) v RF PH 3 RELIEVE", "range": [18, 26], "action": "From D+18 (DPT12), 4 Div neutralises 301 Div one part at a time. CDO TF secures MI.", "reaction": "Cut-off 301 Div units defend. NSR II holds MI. RL weighs the terms.", "counter": "Joint reserve joins ROLL UP. Surrender terms offered (OT23). BAF stops RF flights to MI (B13).", "conditions": "DPT12: RN NTF 1 neutralised, mine-free lane to MI West, RF reserves out of GL.", "outcome": "MI secured ~D+23 (DP15). 301 Div cannot hold SPANNEL-CHELET by ~D+26.", "branches": "B13"}, {"phase": "PH 6 RESTORE (D+26 to D+30) v RF PH 3 RELIEVE", "range": [26, 30], "action": "4 Div and GF secure GL (OT25). Strike TF strikes RF's remaining offensive capability.", "reaction": "102 Corps equips for full effect ~18 Nov. TRG-300 launchers still not located.", "counter": "DPT5 (D+26) tests residual threat. Sequel: Strike TF hits 102 Corps depots; BF defends METWELL.", "conditions": "Handover by D+30 (DP13). Residual threat: 7 set tests. ISR on 102 Corps.", "outcome": "GL, WATSONS, MI handed over ~D+27-28 (DP13). DP7 residual threat partly met.", "branches": "S1"}], "bar": "D+30: FAVOURABLE · DP7 residual RF threat: PARTLY MET — GL met: RF sealift, RN NTF 1, RAF cannot support a crossing; unfired launchers unlocated (est.). METWELL not met: 102 Corps full effect ~D+34.", "headline": "Handover is about D+27-28 (wargame estimate). 102 Corps stays in RL, still a threat to METWELL. Until about D+17 (B6), only the 30% of sorties on deep targets can hit it.", "rating": "FAVOURABLE", "dp16": "PARTLY MET", "notes": "[J3 (DJO)] CDF, OCA 2 against ECA A, the most probable, is also favourable. Handover is estimated at about D+27 to D+28, with two to three spare days. The top rows show why. RF waits for us to strike RL, so no lift is lost, the first echelon lands on D+1 and WATSONS is secured about D+2. When RF loads a 304 Armr Regt group at STRATFORD about D+5, a branch that masses strikes on its landing ships, B5, makes RF abandon the crossing. The red box at the bottom shows the weakness. 102 Corps stays in RL and still threatens METWELL. Until about D+17, only the 30% of sorties kept on deep targets can hit it. So DP7, the residual threat test, is partly met, as in OCA 1.\n\nWORKINGS\nUnder ECA A the launchers stay at JORDON until BF strikes RL, and MONACO is ~464-471 km away, outside BrahMos Blk 2's 450 km reach. The first echelon sails at D and lands on D+1 (~347 km, at least ~16 h at 12 knots). The NOKKIA shuttle opens about D+3 once BDA confirms JORDON launcher kills (OE2) and 24 h pass with no launch at NOKKIA; OCA 1's gate is 72 h with no launch. RIVERSIDE and LB 203 are held about D+13 (28 Oct), RN NTF 1 is neutralised about D+18 and MI is secured about D+23. Test case: if RF shows no reaction for 72 h after D+13, B7 returns strikes to fixed deep targets from D+16 and releases the 25% munitions reserve; handover is then about D+26, but RF keeps its offensive forces (DP7 not met). B6 strikes 102 Corps depots and ports if it has not reached STRATFORD by D+17 or moves towards METWELL; Strike limits keep these strikes to depots and ports. DP7 is met for GL because RF sealift, RN NTF 1 and the RAF cannot support a crossing, though unfired launchers remain unlocated (est.); it is not met for METWELL (102 Corps full effect ~D+34).\n\n", "summary": "FAVOURABLE\n\nGL, WATSONS and MI are handed over about D+27-28, with 2-3 spare days before D+30. \nDuring LODGE, strikes hit 304 Armr Regt as it loads onto landing ships at STRATFORD.\n\nDP7 (residual RF threat at D+30): PARTLY MET"}, "2B": {"rows": [{"phase": "PH 0 SHAPE (RF H-hour D-7 to D)", "range": [-7, 0], "action": "1st echelon embarking at MONACO; rest dispersed. METWELL counter-attack bde named (B4).", "reaction": "RF pre-empts (RDPT1). Moved BrahMos and RAF hit MONACO, QUINTON, NOKKIA, HATTON, KENT, LATSON.", "counter": "First launch releases strikes on launch sites, RINGTON AB (B1). Patriot, SA-21 defend MONACO.", "conditions": "RF strikes if BF mobilises/masses lift (RDPT1). BF fires on first launch (DPT1).", "outcome": "Lift losses unsized (est.). MONACO ~400-420 km, in launcher reach.", "branches": "B1; S2 if lift below floor"}, {"phase": "PH 1 PIERCE (D to ~D+3)", "range": [0, 3], "action": "Strike TF hits RINGTON AB, RN NTF 3 and the STRATFORD sealift. First echelon sails at D.", "reaction": "Amur submarines patrol the NOKKIA approaches. Launchers fire at the lift from new positions.", "counter": "First echelon holds at sea ~48 h while BN hunts the submarines (B8).", "conditions": "Corridor opens (DPT6) once both Amurs located or clear and lift can land.", "outcome": "First echelon lands ~D+3. Launchers left JORDON: OE2 slips to ~D+10 (est.).", "branches": "B8"}, {"phase": "Homeland line, DPT2 (H to ~D+12) v RF attack", "range": [-7, 12], "action": "The named 7 Corps reserve brigade and 1 Div counter-attack to retake METWELL's coast (B4).", "reaction": "302 Div and 304 Armr Regt hold METWELL's coast (RDP3). TRG-300 launchers fire.", "counter": "CAS backs counter-attack. Then CDO TF, 81 BIB seize WATSONS; fighters, AH-64D cover (B10).", "conditions": "WATSONS waits on coast (DPT2). RF commits 303 Div only if 1 Div breaks (RDPT2).", "outcome": "Coast ~D+8-10, WATSONS ~D+11-12 taken (est.). 304 Armr Regt exposed pre-DPT4.", "branches": "B4; B10; B3"}, {"phase": "PH 2 LODGE (~D+3 to ~D+13)", "range": [3, 13], "action": "Lift runs from MONACO (~347 km) until the shuttle can move to NOKKIA (DPT3). Joint reserve lands.", "reaction": "RF re-strikes NOKKIA and QUINTON. Submarines attack lift. 301 Div counter-attacks lodgement.", "counter": "Lift runs pause on submarine contact (B14). GF and 4 Div hold LIBERTY-HANSVILLE (B9).", "conditions": "NOKKIA: launcher kills confirmed, 24 h no launch. RF attacks BF ashore.", "outcome": "4 Div massed ~D+13, 5 days late (DP9; est.). Air superiority ~D+12 (DP4).", "branches": "B14; B9"}, {"phase": "PH 3 FRACTURE (~D+13 to ~D+18)", "range": [13, 18], "action": "~D+13 (DPT9), 4 Div seizes RIVERSIDE AB & NB and air-assaults LB 203.", "reaction": "904 Armour Inf Regt counter-attacks. From 30 Oct, 102 Corps loads at STRATFORD (RDPT3).", "counter": "Joint reserve blocks, CAS neutralises 904 Regt (B11). Strike TF hits LSTs and sea lane (B5).", "conditions": "4 Div massed, air superiority (DP9, DP4). 102 Corps deployable from 30 Oct.", "outcome": "RIVERSIDE and LB 203 held ~D+18. No RF formation lands (DP5; est.).", "branches": "B11; B5"}, {"phase": "PH 4 EXPOSE & NEUTRALISE (~D+18-22)", "range": [18, 22], "action": "~D+18 (DPT4), strikes shift to LSTs, sea lane and RAF bases. MCM vessels clear a lane to MI.", "reaction": "102 Corps loads the surviving landing ships. RN NTF 1 sails. RF flies forces to MI.", "counter": "Strikes stay on crossing (B5). BN, BAF neutralise RN NTF 1 (B14). BAF stops MI flights (B13).", "conditions": "RIVERSIDE, LB 203 held (DPT4). LSTs loading, so no-reaction B7 not taken.", "outcome": "RN NTF 1 neutralised ~D+22-23 (OE6). STRATFORD sealift worn down (est.).", "branches": "B5; B14; B13"}, {"phase": "PH 5-6 ROLL UP, RESTORE (~D+22-30)", "range": [22, 30], "action": "ROLL UP ~D+22, once DPT12 holds. 4 Div neutralises 301 Div piecemeal. MI secured ~D+26-27.", "reaction": "Cut-off 301 Div units defend. NSR II holds MI. 102 Corps completes its equipping.", "counter": "Surrender terms offered (OT23). DPT5 (~D+26) tests residual threat. Selective strikes to D+30.", "conditions": "D+30 is 14 Nov. Residual threat: 7 set tests plus DP7 wording.", "outcome": "Handover ~D+30, no spare days (est.). Residual threat test not met (DP7).", "branches": "S1; S3 on any slip"}], "bar": "D+30: CONTESTED · DP7 residual RF threat: NOT MET — Launchers moved before D; number left unconfirmed. 102 Corps full effect ~D+34. est.: 303 Div intact; RF sea threat to GL suppressed.", "headline": "RF strikes OCA 2's first echelon at MONACO before D. Handover is about D+30, with no spare days, only if ROLL UP starts as soon as its conditions hold.", "rating": "CONTESTED", "dp16": "NOT MET", "notes": "[J3 (DJO)] CDF, OCA 2 against ECA B, the most dangerous, is contested. Handover is about D+30, with no spare days. The red box gives the cause. RF strikes first, before D, and hits the first echelon as it embarks at MONACO. Once RF moves its launchers forward, MONACO is about 400 to 420 km away, inside their reach. We cannot size the loss. The first echelon then waits at sea about 48 hours while BN hunts the submarines. That is branch B8. It lands about D+3, and 4 Div is massed about D+13, five days late. D+30 holds only if ROLL UP, which neutralises 301 Div piecemeal, starts once its conditions hold. DP7 is not met. Any slip triggers S3, a sequel that holds the ground taken.\n\nWORKINGS\nRF's H-hour is assessed D-7 to D; it strikes MONACO, QUINTON, NOKKIA, HATTON, KENT and LATSON, with Patriot and SA-21 defending MONACO. MONACO is ~400-420 km from RF firing positions near RINGTON, inside BrahMos Blk 2's 450 km reach. The ~347 km on the LODGE row is the sea leg from MONACO to GL. If lift falls below the level needed to land, sequel S2 continues the campaign as OCA 1 from ISOLATE (R5 s20). The WATSONS assault waits for B4 to retake METWELL's coast (~D+8-10), so WATSONS falls about D+11-12. RN NTF 1 is neutralised about D+22-23 and MI is secured about D+26-27. With a fixed 5-day EXPOSE & NEUTRALISE, handover slips to about D+31 (est.). DP7 not met: launchers moved before D and the number left is unconfirmed, 102 Corps reaches full effect ~D+34, and 303 Div is estimated intact.\n\n", "summary": "CONTESTED\n\nGL, WATSONS and MI are handed over about D+30, with no spare days, if ROLL UP starts as soon as its conditions hold (DPT12). \nRF strikes the lift at MONACO before D, and we cannot size the loss\n\nDP7 (residual RF threat at D+30): NOT MET"}}, "assessed": {"1C": {"rating": "CONTESTED", "dp16": "PARTLY MET", "text": "RF's reserve crosses to GL early and thickens 301 Div's line. OCA 1 strikes the landing ships at STRATFORD and on the ~106 km lane from SHAPE and SHOCK (B3), then isolates GL. The D+16 assault meets a stronger defence, so the joint reserve is likely needed at DPT8 (B6). METWELL is left with less RF reserve.", "branches": ["B3", "B6", "B8"], "watch": "LSTs loading at STRATFORD before D (PIR: where is 303 Div?)."}, "2C": {"rating": "CONTESTED", "dp16": "PARTLY MET", "text": "FRACTURE's seizure of RIVERSIDE AB & NB cuts the reinforcement route, but 4 Div meets a stronger 301 Div. The joint reserve blocks the counter-attack (B11) and strikes switch to the landing ships as they load (B5).", "branches": ["B5", "B11", "B12"], "watch": "LSTs loading at STRATFORD from ~D+3 (DPT3)."}, "1D": {"rating": "FAVOURABLE–CONTESTED", "dp16": "NOT MET", "text": "No land attack on METWELL, so sorties are split less than in ECA B. The lift stays dispersed until ~D+8 (OT5), strikes are released at the first launch (DPT1 / B1), and the ASW escort holds the SSK threat (OT27, B7). RF ground forces are untouched, so DP7 stays short.", "branches": ["B1", "B7", "B5"], "watch": "Launchers move to firing positions while 302 Div stays in place."}, "2D": {"rating": "CONTESTED", "dp16": "NOT MET", "text": "The first echelon massed at MONACO takes the stand-off strikes (B1, B3), and the Chang Bogo SSKs threaten the corridor (B8, B14). With no METWELL fight, air defence can weight MONACO and NOKKIA. RF ground forces are untouched, so DP7 stays short.", "branches": ["B1", "B3", "B8", "B14"], "watch": "RN SSKs sail from JORDON or RINGTON; launchers disperse."}}, "risks": {"1": [{"risk": "Time: RF has ~16 days to adapt, and 4 Div attacks a prepared RF ", "hold": "BF loses element of surprise and contends with a prepared 301 Div in defence", "type": "RISK TO TIME: RF adapts before the assault"}, {"risk": "Dispersed lift struck before D-Day in ECA B", "hold": "Lower throughput for BF force projection due to damaged amphibious assets", "type": "RISK TO FORCE: Dispersed lift"}, {"risk": "Jus Ad Bello Risk: ~16 days of strikes into RL: RL paints BAU as the aggressor", "hold": "International support for BAU erodes. Sympathiser states may further arm RF.", "type": "LEGITIMACY: BF seen as the aggressor"}], "2": [{"risk": "Attrition Risk: Amphib Lift within BrahMos range before neutralisation", "hold": "Lower throughput for BF force projection due to damaged amphibious assets and casualties", "type": "ATTRITION RISK: Consolidated force projection not replaceable by D+30"}, {"risk": "Threat Survivability Risk: RF does not react to FRACTURE", "hold": "BF to face a concentrated RF (w/ 102 Corps) ivo METWELL", "type": "THREAT SURVIVABILITY RISK: RF offensive forces survive"}, {"risk": "Risk to Force: 4 Div amassed at a single area of operations after FRACTURE", "hold": "RF targets mass concentration of troops and assets, disrupting force projection of BF into GL", "type": "RISK TO FORCE: 4 Div concentrated at single location; vulnerable to RF threats."}]}, "phases": {"1": [{"name": "PH 0 SHAPE", "label": "PH 0 SHAPE · D-14 to D (1–15 Oct)", "range": [-14, 0]}, {"name": "PH 1 SHOCK", "label": "PH 1 SHOCK · D to D+7 (15–22 Oct)", "range": [0, 7]}, {"name": "PH 2 ISOLATE", "label": "PH 2 ISOLATE · D+7 to D+13 (22–28 Oct)", "range": [7, 13]}, {"name": "PH 3 OPEN", "label": "PH 3 OPEN · D+13 to D+16 (28–31 Oct)", "range": [13, 16]}, {"name": "PH 4 ASSAULT", "label": "PH 4 ASSAULT · D+16 to D+26 (31 Oct–10 Nov)", "range": [16, 26]}, {"name": "PH 5 RESTORE", "label": "PH 5 RESTORE · D+26 to D+30 (10–14 Nov)", "range": [26, 30]}], "2": [{"name": "PH 0 SHAPE", "label": "PH 0 SHAPE · D-14 to D (1–15 Oct)", "range": [-14, 0]}, {"name": "PH 1 PIERCE", "label": "PH 1 PIERCE · D to D+3 (15–18 Oct)", "range": [0, 3]}, {"name": "PH 2 LODGE", "label": "PH 2 LODGE · D+3 to D+8 (18–23 Oct)", "range": [3, 8]}, {"name": "PH 3 FRACTURE", "label": "PH 3 FRACTURE · D+8 to D+13 (23–28 Oct)", "range": [8, 13]}, {"name": "PH 4 EXPOSE & NEUTRALISE", "label": "PH 4 EXPOSE & NEUTRALISE · D+13 to D+18 (28 Oct–2 Nov)", "range": [13, 18]}, {"name": "PH 5 ROLL UP", "label": "PH 5 ROLL UP · D+18 to D+26 (2–10 Nov)", "range": [18, 26]}, {"name": "PH 6 RESTORE", "label": "PH 6 RESTORE · D+26 to D+30 (10–14 Nov)", "range": [26, 30]}]}, "oca": {"1": {"catch": "“SHOCK, SEAL, RESTORE”", "phases": "SHOCK → ISOLATE → OPEN → ASSAULT → RESTORE", "central": "CENTRAL IDEA\nParalyse RF's before committing manoeuvre by Simultaneously suppressing RF strike, C2 and A2/AD & Isolate GL from resupply.\nProject 4 Div to neutralise RF in GL & restore GL sovereignty\nDegrade RF's offensive and regeneration system until to prevent regeneration as a threat\nTYPE OF OPERATION: Joint Offensive: strike and isolate first, then a deliberate attack on 301 Div", "main": "MAIN EFFORT: Air Component to neutralise threat, then joint strike and Maritime to project forces. Land component takes over once \nSUPPORTING EFFORTS:\nStrike TF hits RF launchers, sensors, C2 and RAF bases at H-hour. BN cuts RF sea resupply, escorts the 4 Div shuttle and clears the lane to MI.\nCDO and 81 BIB take WATSONS, then MI. IO TF delivers withdrawal terms.", "outcome": "DESIRED OUTCOME\nRF can no longer sustain its occupation of GL. RF also cannot rebuild a credible offensive threat to BAU or GL.", "risk": "PRINCIPAL RISK\nTime: 16 days between Strikes & 4 Div Attack. RF has time to adapt & fortify and 102 Corps to complete mobilization."}, "2": {"catch": "“PIERCE, FRACTURE, NEUTRALISE”", "phases": "PIERCE → LODGE → FRACTURE → EXPOSE & NEUTRALISE → ROLL UP → RESTORE", "central": "CENTRAL IDEA\nCreate operational dislocation through early manoeuvre (projection of forces into E. GL), then exploit RF's reaction to neutralise its offensive and regeneration capability. Reinforce the western-GL foothold, fracture 301 Div's defensive system and compel RF to commit reserves, air, maritime and strike capabilities. Exploit these reactions with joint fires while neutralising RF forces in GL.\nType of operation: Joint offensive: manoeuvre into GL early, then strike the RF forces that react", "main": "MAIN EFFORT: Campaign: 4 Div takes the port, airbase and beach behind 301 Div to cut it off, then neutralises it in parts. Air Component leads strikes on reacting RF forces.\nSUPPORTING EFFORTS:\nStrike TF clears the corridor, then hits reacting RF. At least 30% of sorties stay on fixed RL targets.\nCDO TF and 81 BIB seize WATSONS. 81 BIB then defends it.\nBN escorts the lift, neutralises RN NTF 1 and isolates GL and MI by sea.", "outcome": "DESIRED OUTCOME\n4 Div cuts off 301 Div from inside GL. Joint fires neutralise the RF forces that react. By D+30, RF cannot rebuild a credible offensive threat.", "risk": "PRINCIPAL RISK\nThe first echelon sails from MONACO before RF strike neutralised. Launchers moved forward, as in ECA B, can reach MONACO."}}, "branches": {"1": {"B0": {"trigger": "HARDSHIELD is not set by D-14 (GBAD and fighter cover 24/7 over the JPPL, lift dispersed, TDF guarding mobilisation nodes and C2, METWELL reserve named).", "dpt": "At D-14 (DPT0).", "action": "Delay H-hour until HARDSHIELD is complete.", "returns": "Resume at the new H-hour; every later date moves day for day."}, "B1": {"trigger": "RF strikes BAU JPPL Prior to D", "dpt": "Striking back before D needs War Council approval", "action": "Keep the amph Lift dispersed and defend the bases. \nStrike the RF missile launchers and RINGTON AB.", "returns": "Rejoins the Maritime Component line for SHOCK at D. Shipping stays dispersed until the shuttle starts."}, "B2": {"trigger": "The War Council allows strikes only on targets linked to GL.", "dpt": "War Council on CDF advice, at strike release", "action": "Strike only targets linked to GL. Drop deep targets in RL (RF LR Strike & Reinforcements not targeted)\nISOLATE Phase extends.", "returns": "Rejoins the Strike TF line in SHOCK."}, "B3": {"trigger": "RF LSTs at STRATFORD start loading 303 Div, 304 Armr Regt or 102 Corps.", "dpt": "Comd Joint HQ, from the shuttle decision (DPT3, ~D+8) to D+26.", "action": "STF aircraft and BN submarines strike the LSTs at STRATFORD and the ~106 km sea lane from STRATFORD to RIVERSIDE NB.", "returns": "Rejoins the Strike TF line. \nPlanned strikes deep in RL resume after 72 h with no RF crossing."}, "B4": {"trigger": "GL, WATSONS and MI are secured before D+30 (DP12–DP14), but RF can still pose a credible threat (DP7 not met).", "dpt": "Comd Joint HQ, from the RF threat review (DPT4, ~D+26) to D+30.", "action": "Strike 102 Corps and 303 Div if they move towards METWELL. \nStrike the RAF bases and missile launchers again", "returns": "Rejoins the Strike TF line in RESTORE. Strikes stop once RF is no longer a credible threat. If it still is at D+30, containment follows"}, "B5": {"trigger": "Air Sup RL(-), GL and SEACON STAPLEFORD not attained", "dpt": "Comd Joint HQ at ~D+8 (DPT3, repeated as DPT5 on the land line) or D+16 (DPT7).", "action": "Keep the shipping at NOKKIA and strike the launch areas again. \nDelay ASSAULT phase", "returns": "Rejoins the Landing Force line in ISOLATE. Only begin shuttle once conditions met."}, "B6": {"trigger": "At ~D+20, main attack has not reached RIVERSIDE. BF ships can still use the eastern Straits", "dpt": "Comd Joint HQ decides whether to release the joint reserve (DPT8, ~D+20).", "action": "The joint reserve lands at the GL north beach.", "returns": "Rejoins the Landing Force line in ASSAULT, with RIVERSIDE and LB 203 secured"}, "B7": {"trigger": "A ship is lost, or an RN SAG <50KM of Amph Lift", "dpt": "Delegated to Comd Maritime Component", "action": "Pause the shuttle or the mine clearance. BN + BAF increase CSO-M to hunt for SAG", "returns": "Rejoins the Maritime Component", "note": "Added in the wargame; not on the line-of-operation slides."}, "B8": {"trigger": "RF takes and holds METWELL's south coast or breaks through 1 Div.", "dpt": "Comd HQ 7 Corps, from RF's H-hour to the end of SHOCK.", "action": "7 Corps reserve brigade and 1 Div retake the coast. \nTDF secures the METWELL crossing points.", "returns": "Rejoins the Homeland line in SHOCK. \n1 Div again fixes 302 Div", "note": "Added in the wargame; not on the line-of-operation slides."}, "B9": {"trigger": "301 Div moves west before 4 Div is massed.", "dpt": "Comd Landing Force, from shuttle start (DPT3, ~D+8) to assault (DPT7, D+16).", "action": "GF and 4 Div defend \nStrike TF strikes 301 Div. The shuttle continues.", "returns": "Rejoins the Landing Force line in ISOLATE and OPEN.", "note": "Added in the wargame; not on the line-of-operation slides."}, "B10": {"trigger": "RF counter-attacks WATSONS from RINGTON, ~38 km away.", "dpt": "Delegated to Comd Landing Force, from D+16 to the MI assault (~D+19).", "action": "Strike RINGTON AB again. 81 BIB and CDO TF hold WATSONS. Delay MI Assault", "returns": "Rejoins the Landing Force line in ASSAULT once CDO TF is free for the MI assault.", "note": "Added in the wargame; not on the line-of-operation slides."}, "S1": {"trigger": "RL accepts the withdrawal terms by the D+16 deadline (DP11), and RF forces leave on declared routes.", "dpt": "War Council on CDF advice, at the assault decision (DPT7, D+16).", "action": "No assault. \n4 Div secures the ground RF leaves.", "returns": "Leads to a supervised RF withdrawal, then handover to the GL."}, "S2": {"trigger": "D+30 (14 Nov) arrives before GL, WATSONS or MI has been handed over.", "dpt": "CDF, at D+30.", "action": "Hold and start no new offensive action.", "returns": "Leads to a holding posture until the War Council directs the next step."}, "S3": {"trigger": "RF missile strikes or submarine attacks leave less shipping than the landing needs.", "dpt": "CDF on Comd Joint HQ advice, at the shuttle (DPT3, ~D+8) or assault (DPT7, D+16) decision.", "action": "Sea and air isolation of GL (the SEAL) becomes the main effort.", "returns": "Leads to a campaign led by sea and air isolation. CDF warns the War Council that the D+30 handover is at risk.", "note": "Added in the wargame; not on the line-of-operation slides."}, "S4": {"trigger": "GL, WATSONS and MI are handed over by D+30 and the RF threat has been judged (DP7). 102 Corps is expected to be effective ~D+34.", "dpt": "CDF, from D+26 to D+30. The War Council decides on containment.", "action": "Defend GL, WATSONS, MI and METWELL. Support GL for up to 60 days after the campaign.", "returns": "Leads to post-campaign defence, or to containment if the War Council directs."}}, "2": {"B0": {"trigger": "HARDSHIELD is not set by D-14 (GBAD and fighter cover 24/7 over the JPPL, lift dispersed, TDF guarding mobilisation nodes and C2, METWELL reserve named).", "dpt": "At D-14 (DPT0).", "action": "Delay H-hour until HARDSHIELD is complete.", "returns": "Resume at the new H-hour; every later date moves day for day."}, "B1": {"trigger": "RF strikes BAU ports, air bases or amphibious shipping before D, as it would in ECA B.", "dpt": "War Council on CDF advice, at strike release (DPT1, D-7 to D).", "action": "Disperse the amphibious shipping and defend MONACO and the bases. Strike the launch sites and RINGTON AB.", "returns": "Rejoins the Homeland line in SHAPE. Ships gather again at MONACO for corridor entry (DPT6)."}, "B2": {"trigger": "The War Council allows strikes only on targets linked to GL.", "dpt": "War Council on CDF advice, at strike release (DPT1, D-7 to D).", "action": "Keep the strikes that protect the sea corridor. Strike RF forces that react once they come near GL.", "returns": "Rejoins the Strike TF line. FRACTURE goes ahead as planned."}, "B3": {"trigger": "Before D+13, RF attacks METWELL or fires its long-range launchers.", "dpt": "Comd Joint HQ, strike release (DPT1) to D+13, daily.", "action": "Use part of the 25% of precision munitions held for EXPOSE & NEUTRALISE on 304 Armr Regt and the launchers (CV8).", "returns": "Rejoins the Homeland and Strike TF lines. The rest of the reserve is kept for D+13 (DPT4)."}, "B4": {"trigger": "RF holds METWELL's south coast, ~19 km from WATSONS, as in ECA B.", "dpt": "Comd HQ 7 Corps, WATSONS assault (DPT2), daily from D+1.", "action": "The 7 Corps reserve brigade and 1 Div retake the coast. The WATSONS assault waits.", "returns": "Rejoins the Homeland line in PIERCE. The WATSONS assault goes once the coast is held."}, "B5": {"trigger": "RF landing ships (LSTs) at STRATFORD start loading 303 Div, 304 Armr Regt or 102 Corps.", "dpt": "Comd Joint HQ, NOKKIA shuttle (DPT3, ~D+3), at first loading.", "action": "Switch every strike sortie above the 30% kept on deep targets onto the LSTs, loading or at sea (CV7).", "returns": "Rejoins the Strike TF line. Deep strikes resume after 72 h with no loading."}, "B6": {"trigger": "102 Corps has not reached STRATFORD by D+17 or is moving towards METWELL.", "dpt": "Comd Joint HQ, from DPT4 (D+13) to DPT5 (D+26).", "action": "Strike TF strikes 102 Corps depots and ports, and its units moving towards METWELL (OE8, CV7).", "returns": "Rejoins the Strike TF line. The RF threat is judged at D+26 (DPT5, DP7)."}, "B7": {"trigger": "No sign of RF reacting for 72 h after joint fires are committed at D+13 (DPT4). RF forces stay dispersed.", "dpt": "Comd Joint HQ, at DPT4 (D+13) plus 72 h.", "action": "4 Div holds the ground taken in FRACTURE. Strike TF returns to its fixed list of deep targets.", "returns": "Rejoins the Strike TF line. ROLL UP follows at D+18 (DPT12). The RF threat is judged at D+26 (DPT5)."}, "B8": {"trigger": "At D+1 RINGTON AB is still usable, RN NTF 3 has sailed, the two RF submarines are not located, or NSM launchers have moved west.", "dpt": "Comd Joint HQ at corridor entry (DPT6, D+1). Re-tested daily.", "action": "Hold the first echelon at sea. Strike RINGTON AB and RN NTF 3 again.", "returns": "Rejoins the Maritime Component line in PIERCE. Ships enter the corridor once it is safe."}, "B9": {"trigger": "301 Div moves west of SPANNEL-CHELET before 4 Div is ashore, as in ECA B.", "dpt": "Comd Landing Force, corridor entry (DPT6) to D+8.", "action": "4 Div advance elements and GOLDLAND forces (GF) hold LIBERTY-HANSVILLE. More troops are flown into GOLDLAND AB.", "returns": "Rejoins the Landing Force line in LODGE. The build-up resumes until 4 Div is massed (DP9)."}, "B10": {"trigger": "RF counter-attacks WATSONS from RINGTON, ~38 km away. This is an option RF has in ECA A.", "dpt": "Comd Landing Force, WATSONS assault (DPT2) to D+13.", "action": "Strike RINGTON AB and RN NTF 3 again. Fighters and AH-64D helicopters cover WATSONS.", "returns": "Rejoins the Landing Force line in PIERCE and LODGE. 81 BIB holds WATSONS."}, "B11": {"trigger": "301 Div commits its reserve (904 Armour Inf Regt), or FRACTURE makes no progress for 24 h.", "dpt": "Comd Joint HQ, from FRACTURE launch (DPT9, D+8) to D+13, in the daily sortie allocation.", "action": "The joint reserve blocks the counter-attack. Close air support and interdiction neutralise 904 Regt (OE10, CV9).\n\nIf FRACTURE makes no progress without a counter-attack, the Joint reserve reinforces.", "returns": "Rejoins the Landing Force line. RIVERSIDE AB & NB and LB 203 stay held."}, "B12": {"trigger": "After BF holds RIVERSIDE NB, RF shipping heads for the GL north beach.", "dpt": "Comd Landing Force, from FRACTURE launch (DPT9, D+8) to D+30.", "action": "4 Div blocks the beach exits. BAF aircraft and BN submarines strike the RF shipping.", "returns": "Rejoins the Landing Force line. RIVERSIDE AB & NB and LB 203 stay held."}, "B13": {"trigger": "RF aircraft or helicopters fly reinforcements to the NSR garrison on MI.", "dpt": "Comd Joint HQ, at the ROLL UP decision (DPT12, D+18); watched from ~D+2.", "action": "BAF stops RF flights to MI. The MI assault waits for BF air superiority (DP4).", "returns": "Rejoins the Landing Force line in ROLL UP. The MI assault goes ahead."}, "B14": {"trigger": "A ship is lost, or RN NTF 1 or an RF submarine comes within 50 km of the amphibious shipping.", "dpt": "Comd Maritime Component, corridor entry (DPT6) to D+18.", "action": "Pause the next shuttle run or the mine clearance. BN hunts the submarine with maritime patrol aircraft. BAF strikes RN NTF 1.", "returns": "Rejoins the Maritime Component line in the same phase. Moves resume after 24h with no threat.", "note": "Added in the wargame; not on the line-of-operation slides."}, "S1": {"trigger": "At D+26 or D+30 (DPT5), RF is still a credible threat in whole or in part (DP7 not met or partly met).", "dpt": "CDF, at DPT5 (D+26 and D+30).", "action": "Selective strikes on remaining RF capability until D+30, then containment.", "returns": "Leads to containment or to post-campaign defence, as the War Council decides."}, "S2": {"trigger": "Amphibious shipping falls below the level needed to land the force.", "dpt": "CDF, at corridor entry (DPT6, D+1) or a later lift check.", "action": "4 Div defends west GL. BF isolates GL, MI and WATSONS by sea and air, and offers withdrawal terms.", "returns": "Leads into OCA 1 from its ISOLATE phase, with sea and air isolation as the main effort."}, "S3": {"trigger": "D+30 (14 Nov) arrives before GL, WATSONS or MI is secured.", "dpt": "CDF, at DPT5 (D+30).", "action": "Hold the ground taken and start no new offensive action. CDF reports to the War Council on the remaining RF threat (DP7).", "returns": "Leads to a holding posture until the War Council directs the next step."}, "S4": {"trigger": "RL accepts the withdrawal terms after FRACTURE (DP12), and RF units leave their positions.", "dpt": "War Council on CDF advice, from DPT4 (D+13) to DPT12 (D+18).", "action": "Secure the ground RF leaves. ROLL UP is not needed. RF shipping on declared routes is not attacked.", "returns": "Leads to a supervised RF withdrawal, then handover to the GL authorities."}}}, "decisions": [{"oca": "Both", "dpt": "DPT0", "when": "DPT0 (by D-14) · CDF", "day": -14, "decision": "Confirm HARDSHIELD is set, or delay H-hour (B0).", "conditions": "GBAD and fighter cover 24/7 over the JPPL; lift dispersed; TDF guarding mobilisation nodes and C2; METWELL reserve named.", "pir": "", "ffir": "Is GBAD, fighter cover and TDF guarding in place over the JPPL? Is the lift dispersed?"}, {"oca": "Both", "dpt": "DPT1", "when": "DPT1 (D-7 to D) · War Council", "day": -3.5, "decision": "Release strikes at first RF launch on BAU (B1 in both OCAs); otherwise at D.", "conditions": "Strike authority and ROE given. JORDON BrahMos located. Lift dispersed; key sites guarded.", "pir": "BrahMos, TRG-300 launchers or SSKs left base? RF massing near METWELL?", "ffir": "Lift dispersed? MAHAWA ASW escort? Strike aircraft, AAR, munitions ready?"}, {"oca": "OCA 1", "dpt": "DPT2", "when": "DPT2 (D) · Comd Joint HQ", "day": 0, "decision": "Launch SHOCK at H-hour on D, or run B1 if RF strikes first.", "conditions": "Strike authority released (DPT1).", "pir": "", "ffir": ""}, {"oca": "OCA 1", "dpt": "DPT3", "when": "DPT3 (~D+8) · Comd Joint HQ", "day": 8, "decision": "Ship 4 Div from NOKKIA to GOLDLAND AB & NB, or hold the lift at NOKKIA (B5).", "conditions": "Missiles neutralised; air superiority (OE2, DP2, DP3). RINGTON suppressed; NTF 3 contained.", "pir": "Where are both Amur SSKs, TRG-300s and any NSM launchers west of STRATFORD?", "ffir": "Lift, escorts, first 4 Div brigade ready? Can GOLDLAND NB take RORO ships?"}, {"oca": "OCA 1", "dpt": "DPT6", "when": "DPT6 (~D+13) · Comd Joint HQ", "day": 13, "decision": "Declare GL isolated, issue withdrawal terms (deadline D+16), or extend ISOLATE.", "conditions": "Sea control, NSM suppressed, garrisons cut off (DP4, DP5, DP8, DP9). NTF 1 cannot contest WATSONS/MI.", "pir": "Is RF resupply still reaching GL, MI or WATSONS?", "ffir": "How much of 4 Div is ashore? Are BN escorts and MCM ready for the MI lane?"}, {"oca": "OCA 1", "dpt": "DPT7", "when": "DPT7 (D+16) · Comd Joint HQ", "day": 16, "decision": "ASSAULT, hold (B5) or isolate. If RL accepts: S1 withdrawal (War Council).", "conditions": "Deadline passed. No RF resupply for 7 days. DP3, DP4, DP8, DP9 hold; 4 Div massed (DP10). Lift ready.", "pir": "Has RL accepted? Is RF set to withdraw or reinforce? 102 Corps embarking?", "ffir": "4 Div main body and artillery ashore? CDO TF, 81 BIB and helicopters ready?"}, {"oca": "OCA 1", "dpt": "DPT8", "when": "DPT8 (~D+20) · Comd Joint HQ", "day": 20, "decision": "Commit joint reserve to the main attack, or land it on GL's north beach (B6).", "conditions": "Main attack short of RIVERSIDE. Straits safe (DP8). No RF crossing from STRATFORD in 72 h.", "pir": "Where are NSM launchers and 303 Div? Is 301 Div moving its reserve north?", "ffir": "4 Div force ratio at the point of attack? Reserve ready at NOKKIA?"}, {"oca": "OCA 1", "dpt": "DPT4", "when": "DPT4 (~D+26) · Comd Joint HQ", "day": 26, "decision": "If RF still a threat (DP7): strike to D+30 (B4), prepare S4 containment.", "conditions": "GL, WATSONS and MI secured (DP12–DP14). Evidence in for each RF threat test (DP7).", "pir": "RF launchers, RAF sorties, RN warships, LSTs left? How ready is 102 Corps?", "ffir": "What strike sorties and munitions remain to D+30?"}, {"oca": "OCA 2", "dpt": "DPT6", "when": "DPT6 (D+1, daily) · Comd Joint HQ", "day": 1, "decision": "Send first echelon into corridor or hold at sea (B8). Lift short: isolate.", "conditions": "RINGTON AB denied; RN NTF 3 in port. Both Amur SSKs located. Enough lift to land.", "pir": "Where are both Amur SSKs, the TRG-300 and NSM launchers, and RN NTF 1?", "ffir": "Enough lift for first echelon? Fighter cover, destroyer escort in place?"}, {"oca": "OCA 2", "dpt": "DPT2", "when": "DPT2 (D+1, daily) · Comd Joint HQ", "day": 1, "decision": "Launch WATSONS assault, or hold until BF holds METWELL's south coast (B4).", "conditions": "BF holds METWELL's south coast. RN NTF 1 ships at WATSONS engaged. RINGTON AB suppressed.", "pir": "RF on METWELL's coast? NSR strength on WATSONS? RF moving from RINGTON?", "ffir": "CDO TF, 81 BIB and helicopters ready? Named 7 Corps reserve bde available?"}, {"oca": "OCA 2", "dpt": "DPT3", "when": "DPT3 (~D+3) · Comd Joint HQ", "day": 3, "decision": "Start NOKKIA shuttle or keep lift runs from MONACO. Strike loading LSTs (B5).", "conditions": "JORDON launcher kills confirmed (OE2). No launch at NOKKIA for 24 h. Corridor open (DPT6).", "pir": "Launchers still firing? LSTs loading at STRATFORD? Both Amur SSKs located?", "ffir": "Lift and escorts ready at NOKKIA? GBAD covering NOKKIA?"}, {"oca": "OCA 2", "dpt": "DPT9", "when": "DPT9 (D+8) · Comd Joint HQ", "day": 8, "decision": "Launch FRACTURE to seize RIVERSIDE and LB 203; block any 301 Div reserve (B11).", "conditions": "Air superiority; 4 Div massed (DP4, DP9). RAF under 4 sorties a day. Munitions on plan.", "pir": "Where are 904 Armour Inf Regt and 303 Div? Weakest SPANNEL-CHELET sector?", "ffir": "4 Div combat power ashore? Helicopter lift for LB 203?"}, {"oca": "OCA 2", "dpt": "DPT4", "when": "DPT4 (D+13) · Comd Joint HQ", "day": 13, "decision": "Commit joint fires on reacting RF. None in 72 h: revert to deep targets (B7).", "conditions": "RIVERSIDE and LB 203 held. ISR on RF reaction forces. 25% phase munitions reserve intact.", "pir": "LSTs loading? NTF 1 sailing? RAF surge? New launch sites? 904 Regt moving?", "ffir": "Sorties, tankers, munitions re-taskable in 24 h? BN submarines in sea lane?"}, {"oca": "OCA 2", "dpt": "DPT12", "when": "DPT12 (D+18) · Comd Joint HQ", "day": 18, "decision": "Launch ROLL UP and MI assault. Hold MI assault while RF flies forces in (B13).", "conditions": "RN NTF 1 cannot contest MI. One mine-free lane to MI West open. No RF landing in GL (DP5).", "pir": "301 Div breaking? NSR strength on MI? RF flights into MI continuing?", "ffir": "4 Div combat power, helicopters and MI lane ready?"}, {"oca": "OCA 2", "dpt": "DPT5", "when": "DPT5 (D+26) · Comd Joint HQ; S1: CDF", "day": 26, "decision": "If RF still a threat (DP7): selective strikes to D+30, prepare S1 containment.", "conditions": "GL, WATSONS and MI near handover (DP13). BDA has counted launchers destroyed.", "pir": "Launchers, sorties, warships, LSTs left? Where is 303 Div? 102 Corps ready?", "ffir": "Enough strike sorties and munitions for selective strikes to D+30?"}], "method": "1. Each OCA is played against both ECAs. \n2. The side that is defending states its posture first. \n3. Each phase has three moves: our action, RF's reaction and our counter-action.\n\nDEFINITIONS:\nFavourable = handover with spare days before D+30. \nContested = handover at risk of missing D+30. \nUnfavourable = operational objective or D+30 is missed.\nPartly met = the threat is removed from only one of the two: restored GL or BAU.", "bluf": "Both OCAs are favourable against ECA A and contested against ECA B. Only OCA 2's lift is struck at MONACO. Neither removes the RF threat by D+30 (DP7).", "eca": {"A": {"catch": "“DENY SEA APPROACHES TO WATSONS, MI AND GL; DEFEND OCCUPIED AREAS UNTIL 102 CORPS MOBILISES”", "central": "CENTRAL IDEA\nA joint defensive operation in which the first fight is at sea. 301 Div defends east GL. 302 Div fixes BF 1 Div at the METWELL border. 102 Corps starts to relieve 101 Corps from 30 Oct.\u000bMain effort: Deny BF the sea approaches; secure seized territory through area defence in GL.", "indicators": "KEY INDICATORS", "implications": "IMPLICATIONS TO BAU", "bar": "For ECA ‘A’, the decisive fight is at sea. Neutralising RN NTF 1 opens the way to WATSONS, MI and GL."}, "B": {"catch": "“STRIKE BF LIFT AND SECURE METWELL COAST CONCURRENTLY”", "central": "CENTRAL IDEA\nA joint pre-emptive attack with special forces, missile and air strikes and a limited land attack. The objective is METWELL's south coast, because holding it gives control of the Straits and WATSONS.\u000bMain effort: BrahMos Blk 2 missiles and RL air force (RAF) jets strike BF's amphibious lift, air bases and C2. 302 Div and 304 Armr Regt hold METWELL's south coast.", "indicators": "KEY INDICATORS", "implications": "IMPLICATIONS TO BAU", "bar": "RF Sea Denial Area"}}, "ecaExtra": {"C": {"name": "ECA 'C' Reinforce & Entrench", "tag": "unfavourable to RF · assessed, not wargamed", "msO": "MSO 'A' Fortress Harvest", "central": "Move 303 Div and 304 Armr Regt into GL by sea before BF moves; defend GL in depth.", "method": "LSTs lift the 101 Corps reserve from STRATFORD to RIVERSIDE NB (~106 km) under RN escort; 301 Div and the reserve hold SPANNEL-CHELET.", "why": "Less likely than A: strips METWELL of its reserve (RL NSO 5) and puts RF sealift in BF strike reach.", "watch": "LSTs loading at STRATFORD before D; 303 Div or 304 Armr Regt moving to the port."}, "D": {"name": "ECA 'D' Strike & Squeeze", "tag": "unfavourable to RF · assessed, not wargamed", "msO": "MSO 'B' Paralytic Shock", "central": "Coerce BAU by stand-off strike and sea interdiction alone, with no land attack.", "method": "BrahMos, TRG-300 and RAF strikes on BAU ports, bases and infrastructure; RN NTF 2's Chang Bogo SSKs off MAHAWA; cyber and undersea-cable attacks.", "why": "Less dangerous than B: the same strikes with no ground gain; RF has few land-attack fires.", "watch": "Launchers move to firing positions while 302 Div stays put; RN SSKs sail; cyber and cable attacks rise."}}, "miSlack": {"1A": 5, "1B": 7, "2A": 4, "2B": 3}, "ocaExtra": {"3": {"name": "OCA 3", "catch": "“GRAB, SQUEEZE, SETTLE”", "concept": "Seize WATSONS and MI first to stop RL's 1 Nov oil export; isolate GL; offer terms; 4 Div attacks only if RL refuses.", "screen": [["Suitable", "No", "GL restored last; D+30 at risk"], ["Feasible", "Partly", "CDO TF and 81 BIB split; RINGTON ~38 km from WATSONS"], ["Acceptable", "Partly", "early fighting on the rigs"], ["Distinct", "Yes", ""]], "risk": "Force: CDO forces held on WATSONS and MI with GL still RF-held.", "kept": "Early seizure of WATSONS, in OCA 2.", "vs": {"A": "RN NTF 1, ECA A's main effort, contests WATSONS and MI head-on before BF holds the sea.", "B": "RF takes METWELL's coast while the CDO forces are committed to the islands.", "C": "RF's reserve reaches GL while BF is on the islands, so GL is harder later.", "D": "Stand-off strikes hit the CDO lift and the island garrisons, with no ground decision in GL."}}, "4": {"name": "OCA 4", "catch": "“VAULT, SEVER, COLLAPSE”", "concept": "Land 4 Div and air-assault straight into RIVERSIDE AB & NB and LB 203 on D+1 to D+3, cutting 301 Div off at once.", "screen": [["Suitable", "Yes", "cuts 301 Div off fastest"], ["Feasible", "No", "RIVERSIDE is ~106 km from STRATFORD, inside NSM reach"], ["Acceptable", "No", "risks irreplaceable lift (BF CV2b)"], ["Distinct", "Yes", ""]], "risk": "Force: lift lost to coastal missiles before sea control.", "kept": "The LB 203 air assault, in both OCAs, once air superiority is won.", "vs": {"A": "The landing meets RN NTF 1 and RAF jets from RINGTON AB before BF holds the sea or the air.", "B": "Pre-emptive strikes hit the lift as it masses for the deep landing; the discard reason bites hardest here.", "C": "The landing arrives at RF's reinforcement point as the reserve does.", "D": "Stand-off strikes and SSKs hit the lift on the long run east."}}, "5": {"name": "OCA 5", "catch": "“STRIKE, STARVE, COMPEL”", "concept": "Strike RF and cut GL off by sea and air until RL withdraws; 4 Div only secures the ground RF leaves.", "screen": [["Suitable", "No", "GL restored only if RL withdraws; 102 Corps can deploy from 30 Oct"], ["Feasible", "Yes", ""], ["Acceptable", "Yes", ""], ["Distinct", "Partly", "OCA 1 without its assault"]], "risk": "Mission: RL waits for 102 Corps; GL not restored by D+30.", "kept": "OCA 1's off-ramp (S1) and lift-shortfall sequel (S3).", "vs": {"A": "RF defends in place and waits for 102 Corps; GL is not restored by D+30.", "B": "RF holds METWELL's coast and BF has no ground force committed to retake GL.", "C": "A reinforced GL garrison outlasts the isolation.", "D": "A strike exchange with no ground decision."}}}}</script>
+<script id="asdata" type="application/json">{"groups": [{"title": "Strategic, authority & time", "items": [{"text": "D-day is 15 Oct, so D+30 is 14 Nov.", "basis": "CINC ID para 1d; S3 para 4b gives no start date.", "ifWrong": "Every D+ date in both OCAs moves with it.", "critical": false}, {"text": "Air and sea strikes into RAVENLAND are allowed with War Council authority; the restriction applies to land intrusion only.", "basis": "S3 para 3 limits land intrusion only.", "ifWrong": "If the War Council limits strikes or a third party intervenes, the systemic-neutralisation logic of both OCAs changes. Lift protection, blinding RF's air and sea picture, air superiority and denying RF reserves (OCA 1: DP2, DP3, DP5, DP6; OCA 2: DP2–DP5) all rest on these strikes.", "critical": true}, {"text": "No third-party military intervention. Donated missiles near BAU's borders are handled as a branch.", "basis": "S3 para 5e (donated missiles). S3 para 1a warns that sympathiser nations may supply equipment if BAU 'has crossed the line'.", "ifWrong": "If the War Council limits strikes or a third party intervenes, the systemic-neutralisation logic of both OCAs changes.", "critical": true}, {"text": "BF is at full force potential by D-day.", "basis": "S3 para 5a is garbled; X1EF p3A-3 gives 7 days.", "ifWrong": "The OCA start dates rest on it.", "critical": false}, {"text": "'Limited force option' is read as a limit on the aim and on land action: no land intrusion into RAVENLAND and no regime change. It does not bar air and sea strikes into RAVENLAND, which the War Council authorises.", "basis": "S3 first para 4d and para 3; R4 s19.", "ifWrong": "Both OCAs depend on this reading. If the War Council limits strikes or a third party intervenes, the systemic-neutralisation logic of both OCAs changes. Branches B2 (OCA 1) and B2 (OCA 2) cover a narrower authority.", "critical": true}, {"text": "The Services HQ QUEENSTOWN jamming site is struck only with War Council approval.", "basis": "S3 paras 3 and 4c.", "ifWrong": "The task to destroy RF's GNSS jammers rests on it.", "critical": false}, {"text": "Strikes at RINGTON are limited to the naval station piers, the 4 fleet tankers and RINGTON AB. RINGTON is also a major commercial port, and RINGTON International Airport is near the capital.", "basis": "X1EF p2C-2 paras 19-20; S3 para 4c. Tanker location per X1EF Table 19 row 13 (STRATFORD and JORDON) or note 2 (off RINGTON).", "ifWrong": "", "critical": false}, {"text": "C2 targets are operational nodes only: the Western Region AOC at DAIWA AB, the 4 TPS-59 radars and the E-2C bases. MoD QUEENSTOWN (RF Army, Air Force and Navy HQs) and the Services HQ QUEENSTOWN jammer are restricted. Strikes on 102 Corps are limited to its military depots and embarkation ports, and the WATSONS rigs are no-strike. Dynamic targets in OCA 2's EXPOSE & NEUTRALISE follow the same no-strike and restricted lists.", "basis": "S3 para 3 bars 'actions that would result in change of political leadership in RL'; X1EF Tables 9, 15, 18; rigs no-strike derived from CINC ID para 3b.", "ifWrong": "", "critical": false}, {"text": "WATSONS is GOLDLAND's resource; no source says whose waters it sits in.", "basis": "X1EF p2-5 para 13.", "ifWrong": "Handing WATSONS, GL and MI to GL authority by D+30 (OCA 1 DP15; OCA 2 DP13) rests on it.", "critical": false}, {"text": "RAVENLAND can decide on withdrawal terms within 72 hours. RF shipping leaving GL, MI or WATSONS on declared routes is not engaged until the deadline.", "basis": "No threshold or timeline is given (evidence gap i).", "ifWrong": "OCA 1's decision points DPT6 and DPT7 depend on it.", "critical": false}, {"text": "The withdrawal off-ramp sits in OCA 1's pause after SHOCK and SEAL, before ASSAULT. OCA 2 moves too fast to offer much of one. Both OCAs publish the withdrawal demand before H-hour.", "basis": "Syndicate assumption; R4 s21 placed the withdrawal demand there; R4 s22-23.", "ifWrong": "", "critical": false}]}, {"title": "RF posture & behaviour", "items": [{"text": "102 Corps is fully effective about 18 Nov: deployable from 30 Oct, plus 96 hours, plus 15 days.", "basis": "30 Oct is given; the rest is computed.", "ifWrong": "RF's relief timeline (CV7), denying RF reserves entry to METWELL and GL (DP5) and disrupting 102 Corps mobilisation (OE8) rest on it.", "critical": false}, {"text": "RF launchers stay near their stated bases, except under ECA B, which moves them to firing positions. The TRG-300 must be located first; BrahMos Blk 1 counts only if moved.", "basis": "", "ifWrong": "If RF moves NSM or other fires to RINGTON or the coast, OCA 2's PIERCE is delayed and lift risk rises sharply. An NSM battery on the RINGTON coast would reach NOKKIA (~115 km), WATSONS (~38 km) and GOLDLAND AB & NB (~66 km). From firing positions near RINGTON, BrahMos Blk 2 also reaches MONACO, where OCA 2's first echelon embarks.", "critical": true}, {"text": "RF will move its mobile launchers once strikes begin. This is a judgement: the TRG-300's 2-hour notice to move shows readiness to move.", "basis": "S5 FAQ 5 (TRG-300 at 2 hr notice to move).", "ifWrong": "OCA 1's simultaneous opening strike on sensors and launchers depends on it; OCA 2 strikes launchers when they fire from new positions in EXPOSE & NEUTRALISE. If RF moves NSM or other fires to RINGTON or the coast, OCA 2's PIERCE is delayed and lift risk rises sharply. An NSM battery on the RINGTON coast would reach NOKKIA (~115 km), WATSONS (~38 km) and GOLDLAND AB & NB (~66 km).", "critical": true}, {"text": "303 Div's location is unresolved: 30 km from METWELL (brief text) or near STRATFORD NB (brief map).", "basis": "BRIEF text and BRIEF map disagree.", "ifWrong": "Denying 303 Div, 304 Armr Regt and 102 Corps entry to METWELL and GL (DP5), and interdicting 303 Div before it reaches METWELL, rest on it.", "critical": false}, {"text": "RF stocks in GOLDLAND, MI and WATSONS are not stated; isolation takes effect as stocks run down.", "basis": "No source gives RF stocks.", "ifWrong": "If 301 Div has substantial stocks, OCA 1's isolation may not weaken RF enough before the D+16 assault. OCA 1's effect on 301 Div by D+16 depends on RF stocks.", "critical": true}, {"text": "OCA 2 assumes a threat to 301 Div's lines of communication, WATSONS or RIVERSIDE will make RF commit some mix of reserves, RAF, RN or reinforcement assets. 904 Armour Inf Regt is assumed to be 301 Div's counter-attack force. Before 102 Corps can deploy (30 Oct, D+15), RF can commit only 303 Div, 304 Armr Regt, 301 Div's reserve, RN NTF 1 and 3, the RAF and its launchers; from 30 Oct, 102 Corps elements can load at STRATFORD.", "basis": "Syndicate, 25 Sep. ECA A branches B1 (303 Div and 304 Armr Regt to GL by sea when BF lodges in GL), B2 (counter-attack WATSONS from RINGTON) and B3 (BrahMos Blk 2 and RAF counter-strike); ECA B RDPT2 and RDPT3; X1EF Table 12; 7 RN LSTs at STRATFORD under Army OPCON (X1EF Table 19 note 3). No source gives RF's decision thresholds (evidence gap d).", "ifWrong": "If RF stays dispersed and refuses to expose reserves and systems, OCA 2 loses its EXPOSE & NEUTRALISE mechanism and DP7 rests on the fixed deep set, which held only its 30% floor share before D+13. If no reaction indicator appears for 72 h after DPT4, branch B7 applies.", "critical": true}, {"text": "The NSR holds WATSONS with an X(-) and MI with a II (battalion) or more; 70% is the regiment-wide strength figure.", "basis": "BRIEF s11; X1EF p3-1 para 1a.", "ifWrong": "The NSR's 70% split between WATSONS and MI (CV10) and the WATSONS and MI seizure tasks rest on it.", "critical": false}, {"text": "RN NTF 1 is based around GOLDLAND and WATSONS.", "basis": "BRIEF s11; X1EF Table 19 puts TF 1 at STRATFORD instead.", "ifWrong": "BF sea control of WATSONS, MI and GOLDLAND NB (OCA 1 DP4; OCA 2 DP6) and the task to neutralise RN NTF 1 rest on it.", "critical": false}, {"text": "RN NTF 3 is based at RINGTON.", "basis": "X1EF Table 19 note 1; BRIEF s11 draws it south of GL.", "ifWrong": "RINGTON's weakness as a forward base (CV1) and the task to neutralise RN NTF 3 rest on it.", "critical": false}, {"text": "RF fleet tankers are anchored off RINGTON.", "basis": "X1EF Table 19 note 2; Table 19 row 13 lists STRATFORD and JORDON instead.", "ifWrong": "RINGTON's weakness as a forward base (CV1) and the related strike task rest on it.", "critical": false}, {"text": "305 Div and the 1st and 2nd Cav Divs are kept for RAVENLAND homeland defence.", "basis": "Not stated in the source (X1EF Table 9).", "ifWrong": "RF's relief timeline (CV7) and denying RF reserves entry to METWELL and GL (DP5) rest on it.", "critical": false}, {"text": "RF C2 lines are not given; Navy HQ QUEENSTOWN is taken to command RN NTF 1.", "basis": "X1EF Table 18.", "ifWrong": "The ECA A C2 picture rests on it.", "critical": false}, {"text": "WATSONS oil leaves by tanker under RN NTF 1 escort.", "basis": "", "ifWrong": "ECA A's phase 4 rests on it.", "critical": false}, {"text": "Under ECA B, 302 Div and 304 Armr Regt against BF 1 Div and the TDF is below 3:1 overall, so RF takes a limited objective.", "basis": "BIC p.234 (Army analogy).", "ifWrong": "The shape of ECA B rests on it.", "critical": false}, {"text": "RF joint strikes are planned and released centrally by LE BON's HMC.", "basis": "X1EF p2-5 para 11.", "ifWrong": "The ECA B C2 picture rests on it.", "critical": false}, {"text": "RIVERSIDE AB & NB and LB 203 are 301 Div's sea and air entry points. RF holds RIVERSIDE and 301 Div landed over LB 203, but no source says RF supplies 301 Div through them.", "basis": "X1EF p3-1 para 2; evidence gap c.", "ifWrong": "OCA 2's FRACTURE phase and its assumption that RF reacts to manoeuvre depend on it.", "critical": false}, {"text": "102 Corps embarks at STRATFORD on RN LSTs under Army OPCON.", "basis": "X1EF Table 19 note 3; BRIEF s11 draws 102 Corps in eastern RL.", "ifWrong": "OCA 2's relief arrow, DPT4, EXPOSE & NEUTRALISE and branch B5 depend on it.", "critical": false}]}, {"title": "Battlespace & infrastructure", "items": [{"text": "Map scale is 20 km per square, plus or minus 5 km.", "basis": "X1EF p2B-1.", "ifWrong": "Every measured range rests on it. At the map-arrow scale (x1.6 to x1.9), BrahMos Blk 2 no longer reaches NOKKIA and less of the eastern Straits sits under NSM cover, so OCA 2's exposure to ECA B shrinks. The corridor stays outside NSM range at either scale.", "critical": false}, {"text": "GOLDLAND AB and NB are held by GOLDLAND forces and usable.", "basis": "Measured (MEAS). R5 hidden s46 says RF-held.", "ifWrong": "If RF holds the entry points or throughput is inadequate, both OCAs need major redesign: both enter through GOLDLAND AB & NB, so both become opposed landings and must be re-planned.", "critical": true}, {"text": "GOLDLAND NB can take RORO and follow-on shipping, and GOLDLAND AB can take air-landing. Port throughput may limit the build-up before hull numbers do.", "basis": "No source states this (evidence gap g).", "ifWrong": "Both OCAs' western entry depends on it. If RF holds the entry points or throughput is inadequate, both OCAs need major redesign: both enter through GOLDLAND AB & NB, so both become opposed landings and must be re-planned.", "critical": true}, {"text": "MI waters are mined, density unknown; the 4 Landsort MCMVs at QUINTON can clear one lane.", "basis": "", "ifWrong": "Securing MI with one mine-free lane to MI West (OCA 1 DP13; OCA 2 DP15) rests on it.", "critical": false}, {"text": "The OCA 2 corridor runs from NOKKIA port through the western mouth of the Straits to GOLDLAND AB & NB (held by GOLDLAND forces). It lies outside NSM range from STRATFORD (~211 km against 180 km). The threat is at RINGTON: RN NTF 3, RINGTON AB (F-16CM, Rafale, AH-64E, SA-20B) and a TRG-300 if based there.", "basis": "Syndicate assumption based on range and geography (MEAS). The NSM gap holds only while NSM stays at STRATFORD.", "ifWrong": "If RF moves NSM or other fires to RINGTON or the coast, OCA 2's PIERCE is delayed and lift risk rises sharply. An NSM battery on the RINGTON coast would reach NOKKIA (~115 km), WATSONS (~38 km) and GOLDLAND AB & NB (~66 km). OCA 2 meets 'suppress coastal fires before projection' only while RF launchers stay near their stated bases; OCA 2's DPT6 and DPT9 PIRs and branch B8 cover this.", "critical": true}, {"text": "WATSONS rig count, layout and depth are not stated; the rigs can be seized intact by a heliborne raid.", "basis": "", "ifWrong": "Securing WATSONS with its oil rigs intact (OCA 1 DP12; OCA 2 DP8) rests on it.", "critical": false}]}, {"title": "Force generation & employment", "items": [{"text": "4 Div advance elements are already in western GOLDLAND.", "basis": "BRIEF s12 text (its map shows 4 Div in BAU). A second source puts BF forces in western GL: leaflet balloons are flown over them (BRIEF s10).", "ifWrong": "If RF holds the entry points or throughput is inadequate, both OCAs need major redesign: both enter through GOLDLAND AB & NB, so both become opposed landings and must be re-planned. Massing 4 Div in west GL (OCA 1 DP10; OCA 2 DP9) rests on it.", "critical": true}, {"text": "4 Div's home is MONACO. In OCA 1, 4 Div stays dispersed there in SHAPE and moves overland to NOKKIA in SHOCK as BrahMos launchers are destroyed. In OCA 2, the first echelon embarks at MONACO and the rest moves overland to NOKKIA from ~D+3.", "basis": "The move time and embarkation port are not stated.", "ifWrong": "", "critical": false}, {"text": "4 Div's main body and artillery need about 7 days of shuttle through GOLDLAND NB and AB (OCA 2: D+1 to D+8). OCA 1 uses the same rate: its shuttle starts ~D+8 and 4 Div is massed in west GL by ~D+15, before ASSAULT on D+16.", "basis": "No source gives port or airfield throughput.", "ifWrong": "If the rate is slower, OCA 1's ASSAULT slips day for day, and OCA 2's FRACTURE moves toward 102 Corps' deployment date (30 Oct); OCA 2's EXPOSE & NEUTRALISE then starts after the first 102 Corps crossings can begin.", "critical": false}, {"text": "The 3:1 ratio is applied only at the point of attack. SPANNEL-CHELET is ~77 km long, so 4 Div can concentrate at one point while 301 Div covers the whole line and GOLDLAND forces fix its south sector.", "basis": "BIC p234, a battalion wargame rule; line length measured (MEAS).", "ifWrong": "", "critical": false}, {"text": "MAHAWA lift (Dokdo, 1 Foudre, Canberra, 4 LST, 8 LCAC) sails south from 1 Oct on War Council approval that day, at an assumed 12 knots: at least ~1,050 km, about 2 days. It passes RN TF 2's waters (4 Chang Bogo SSK at JORDON), so it sails with ASW escort.", "basis": "Measured (MEAS); a lower bound, because part of the route is off the sheet. X1EF Table 19. R5 s32's 'up to 35 days' has no exercise source and is withdrawn.", "ifWrong": "If the lift is late, only QUINTON lift (2 Foudre, 12 LCAC) and 12 RORO remain (X1EF Table 7); OCA 2's first echelon is hit first.", "critical": false}, {"text": "OCA 2's first echelon embarks at MONACO, which is outside BrahMos Blk 2 reach (~471 km from JORDON) only while the launchers stay at JORDON. Lift disperses on ECA B indicators and re-masses at MONACO only to sail, under Patriot and SA-21 cover. It sails at D and lands on D+1 (~347 km, at least ~16 h at 12 knots). The shuttle moves to NOKKIA (~97 km) once BDA confirms the JORDON launchers are destroyed (under ECA B, launchers found after firing) and 24 h pass without a launch at NOKKIA (~D+3). GBAD Bde elements and DDG air defence cover NOKKIA. OCA 2 accepts the first echelon sailing before RF's long-range strike is neutralised.", "basis": "Measured ranges (MEAS); X1EF Table 6 (Patriot and SA-21 cover). BrahMos Blk 2 reaches NOKKIA at ~330 km; a TRG-300 at RINGTON port would reach NOKKIA only at the edge of its range (~113 km, plus or minus 5 km).", "ifWrong": "From firing positions near RINGTON (~400-420 km), MONACO is inside BrahMos Blk 2 reach.", "critical": false}, {"text": "901 and 902 CDO Bns and BAF UH-60/CH-47 helicopters are available; their radius and lift are not stated.", "basis": "", "ifWrong": "The WATSONS and MI seizure tasks rest on it.", "critical": false}, {"text": "The CDO TF (901, 902 CDO Bns), 81 BIB and BAF UH-60 and CH-47D stage at NOKKIA: WATSONS is ~79 km and MI West ~120 km away. In OCA 2 they stay dispersed near NOKKIA until the WATSONS assault, because ECA A's counter-strike falls on NOKKIA from D. METWELL is not used for staging: 302 Div is 10 km from METWELL, and ECA B's objective is the METWELL coast opposite WATSONS.", "basis": "Measured (MEAS); BRIEF s11; wargame refinement. Helicopter radius is not stated.", "ifWrong": "", "critical": false}, {"text": "The joint reserve is one brigade group from 6 Div (QUINTON, ~144 km from NOKKIA), released by Comd Joint HQ. OCA 1 holds it at NOKKIA for branch B6. OCA 2 lands it in west GOLDLAND by D+8, before FRACTURE, where it blocks 301 Div's counter-attack under branch B11.", "basis": "A reserve at NOKKIA would be ~97 km across water on lift already carrying 4 Div.", "ifWrong": "", "critical": false}, {"text": "CDF assigns forces OPCOM to Comd Joint HQ, who delegates OPCON. HQ 7 Corps commands the homeland sector (1, 2, 3 Div, TDF, Island Defence TF) and a named reserve brigade for the METWELL coast. Comd Air Component also commands Strike TF and controls airspace across the JOA. BN commands the amphibious task force until GOLDLAND NB; Comd 4 Div commands the landing force and is supported ashore. Comd Joint HQ sets and reapportions strike sorties through joint targeting and proposes the AOA for CDF approval.", "basis": "JRP 1 pp13, 115, 147; BRIEF s12 'NTF2 to support amphib operation'. No source sets these.", "ifWrong": "", "critical": false}, {"text": "Force ratios by unit count: the NSR on WATSONS is taken as 2 battalions at 70% (~1.4) and on MI as 1 battalion at 70% (~0.7); 81 BIB is taken as 3 battalions. WATSONS: CDO TF (2) with 81 BIB (3) gives ~3.6:1 in both OCAs. MI: CDO TF alone gives ~2.9:1, as 81 BIB then defends WATSONS.", "basis": "Planning figures; no source gives the NSR battalion count or BIB size.", "ifWrong": "", "critical": false}, {"text": "GOLDLAND forces (a Division(-) on LIBERTY-HANSVILLE) defend LIBERTY-HANSVILLE and fix 301 Div's south sector, coordinating with Comd 4 Div under BI-MUDA. 4 Div passes through GOLDLAND lines at LIBERTY-HANSVILLE.", "basis": "X1EF p2D-2 para 2; S3 para 1a; JRP 1 p154. No source sets this relationship.", "ifWrong": "", "critical": false}, {"text": "OCA 2 depends on 4 Div's western-GOLDLAND foothold and on lift (most lift is at MAHAWA; NOKKIA is ~97 km from GOLDLAND AB & NB). Its first echelon embarks at MONACO, inside reach of ECA B's moved launchers. Lift is OCA 2's main risk.", "basis": "Syndicate assumption; BRIEF s12 text (its map draws 4 Div in BAU).", "ifWrong": "", "critical": false}]}, {"title": "OCA & wargame control", "items": [{"text": "Phase timings are planning estimates. OCA 1: SHAPE D-14 to D; SHOCK D to D+7; ISOLATE D+7 to D+13; OPEN D+13 to D+16; ASSAULT D+16 to D+26; RESTORE D+26 to D+30. OCA 2: PIERCE D to D+3; LODGE D+3 to D+8; FRACTURE D+8 to D+13; EXPOSE & NEUTRALISE D+13 to D+18 (can end sooner once its conditions hold); ROLL UP D+18 to D+26; RESTORE D+26 to D+30. Key dates, OCA 1: shuttle ~D+8, terms ~D+13, ASSAULT and WATSONS D+16, MI ~D+19, reserve ~D+20, DP7 test ~D+26. OCA 2: first echelon lands D+1, WATSONS D+1 to D+2 if METWELL's coast is held, NOKKIA shuttle from ~D+3, FRACTURE D+8, LB 203 air assault D+9, joint fires committed D+13, ROLL UP D+18, MI ~D+22, DP7 test D+26.", "basis": "Planner estimates. SHOCK timing from R4 s21; ISOLATE ends a day before R5 hidden OE6's D+14. OCA 2's EXPOSE & NEUTRALISE spans 102 Corps' deployment date (30 Oct, D+15) and RAVENLAND's oil export aim (1 Nov, D+17).", "ifWrong": "", "critical": false}, {"text": "OCA 1 brings recapture forward from D+25 to D+16, because D+25 leaves only 5 days for three objectives. It also shortens the withdrawal-demand phase (D+7 to D+25) to a D+16 deadline.", "basis": "R4 s21 had recapture at D+25.", "ifWrong": "", "critical": false}, {"text": "WATSONS and MI: OCA 1 isolates both in ISOLATE and seizes them with GOLDLAND in ASSAULT (WATSONS at H-hour, MI ~D+19). OCA 2 seizes WATSONS in PIERCE (~45 km from GOLDLAND AB & NB, ~38 km from RINGTON) once BF holds METWELL's south coast; MI is isolated, then secured in ROLL UP (~D+22).", "basis": "Syndicate assumption, 24 Sep (updated 25 Sep); distances measured (MEAS).", "ifWrong": "", "critical": false}, {"text": "Gate thresholds ('contest level', garrison demand, 48 hr, 24 hr) are planner estimates set at the wargame.", "basis": "Planner estimates.", "ifWrong": "The measures of effect for suppressing the RAF and coastal missiles, cutting resupply, legitimacy and anti-sabotage (OE4, OE5, OE7, OE15, OE16) rest on it.", "critical": false}, {"text": "Gate thresholds are wargame starting values: RAF sorties into the named airspace under 4 a day for 72 h; no RF land-attack launch for 72 h (OCA 1) or at NOKKIA for 24 h (OCA 2 shuttle); no RF delivery to GL, MI or WATSONS for 7 days before OCA 1's ASSAULT; no RF delivery to GL for 72 h to end OCA 2's FRACTURE; no NSM launch at BF shipping for 72 h. Reassessment after 48 h (OCA 1) or 24 h (OCA 2). OCA 2's reaction indicators: RF LSTs loading at STRATFORD, RN NTF 1 at sea, RAF sorties over GL at 4 a day or more, a launch from a new position, or 904 Armour Inf Regt moving.", "basis": "Set at the wargame; lift must be at or above the level needed to land (R5 s20).", "ifWrong": "If none of OCA 2's reaction indicators appears for 72 h, branch B7 is triggered.", "critical": false}, {"text": "Indicative weighting, set at the wargame. OCA 1 holds 25% of BAF precision munitions from D for the assault fire plan, and CAS rises to ~45% of sorties in ASSAULT. OCA 2 keeps at least 30% of daily strike sorties on the fixed deep set from D; in EXPOSE & NEUTRALISE, Comd Joint HQ reapportions the other strike sorties each day to RF forces that react. Deep-set output dates, OCA 2: RF long-range strike neutralised ~D+3, RF air and sea picture lost D+5, air superiority D+8, RF reserves denied from EXPOSE & NEUTRALISE to D+30. OCA 1: picture lost D+5, long-range strike neutralised and air superiority D+7, reserves denied ~D+12. OCA 2's earlier long-range strike date comes from sending its floor sorties first to the JORDON launchers that reach NOKKIA.", "basis": "Stocks are given only as 80% (S3 para 5b).", "ifWrong": "", "critical": false}, {"text": "The 80% munition stock is assumed to sustain one week at the opening strike rate, then the sustained rate (about one-third of it) to D+30. OCA 1 holds 25% of precision munitions for its assault; OCA 2 holds 25% from D for EXPOSE & NEUTRALISE. Under branch B3, Comd Joint HQ may release part of OCA 2's reserve early against forces ECA B commits at H-hour; under branch B7 the unspent reserve returns to the deep set.", "basis": "S3 para 5b (80% stock). Planner's estimate, set at the wargame.", "ifWrong": "If stocks are lower, OCA 1 cuts re-strikes before ASSAULT first; OCA 2 cuts deep-set re-strikes above the floor first and keeps the EXPOSE & NEUTRALISE reserve. Munitions state is a condition at OCA 1 DPT7 and OCA 2 DPT9 and DPT4.", "critical": false}, {"text": "OCA 2 stays within MSO 1 because early manoeuvre is used deliberately to expose RF's offensive and regeneration system for joint neutralisation, while at least 30% of daily strike sorties from D keep pressure on fixed strategic nodes. The output test is DP7 (MSObj 3's measure), judged met or not met at D+30 with evidence. GOLDLAND handover alone does not meet this test.", "basis": "Syndicate assumption, revised 25 Sep.", "ifWrong": "", "critical": false}, {"text": "DP7 is judged met at D+30 only when all seven tests hold: no RF land-attack launch for 72 h; RAF sorties over the Straits and GL under 4 a day; RN NTF 1 and 3 unable to contest BF moves; RF sealift at STRATFORD unable to lift a regiment to GL; no 102 Corps unit in GL or METWELL; launchers destroyed, counted by BDA against the two BrahMos squadrons and two TRG-300 batteries; 102 Corps, 303 Div and 304 Armr Regt unable to mass against METWELL.", "basis": "Planner; set at the wargame. X1EF Table 19 rows 21-22; S5 p4-2-7 para 4.", "ifWrong": "Otherwise CDF takes sequel S4 (OCA 1) or S1 (OCA 2) to the War Council. 'Partly met' (threat to restored GL removed, threat to BAU remains) is treated as not met.", "critical": false}]}]}</script>
+<script>
+const D = JSON.parse(document.getElementById('data').textContent);
+let AS = null; try { AS = JSON.parse(document.getElementById('asdata').textContent); } catch (e) { AS = null; }
+const OCA = {'1': ['OCA 1', '“SHOCK, SEAL, RESTORE”'], '2': ['OCA 2', '“PIERCE, FRACTURE, NEUTRALISE”'], '3': ['OCA 3', 'UNFAVOURABLE'], '4': ['OCA 4', 'UNFAVOURABLE'], '5': ['OCA 5', 'UNFAVOURABLE']};
+const ECA = {'A': ["ECA 'A' Choke & Hold", 'most probable'], 'B': ["ECA 'B' Punch & Seize", 'most dangerous'], 'C': ["ECA 'C' Reinforce & Entrench", 'UNFAVOURABLE to RF'], 'D': ["ECA 'D' Strike & Squeeze", 'UNFAVOURABLE to RF']};
+const wargamed = () => ['1', '2'].includes(st.oca) && ['A', 'B'].includes(st.eca);
+const BASE = {'1A': [26, 28], '1B': [29, 30], '2A': [27, 28], '2B': [30, 30]};   // handover (low, high), wargame results slide
+const OE2 = {'1A': 7, '1B': 10, '2A': 3, '2B': 10};                              // days to OE2 (launchers neutralised) in the wargame
+// strike-led days on the handover critical path: OCA 1 = SHOCK to OE2 (ISOLATE runs to the fixed D+16 assault date, so small delays there are absorbed);
+// OCA 2 = OE2 + the 5-day EXPOSE & NEUTRALISE, which gates ROLL UP with no slack (wargame slides, OCA 2 v ECA A and B)
+const STRIKE = {'1A': 7, '1B': 10, '2A': 8, '2B': 15};
+// upside when strikes beat plan: OCA 1's assault is fixed at the D+16 terms deadline, so it can only win back the ~3 days SHOCK ran late in ECA B;
+// OCA 2 gains only on OE2 (EXPOSE & NEUTRALISE is a fixed 5-day window)
+const LATE = {'1A': 0, '1B': 3};
+// OCA 1 masses 4 Div a day before its assault (shuttle ~D+8 + 7 days = ~D+15 v assault D+16; ECA B ~D+18 v ~D+19),
+// so the first day of pre-assault delay is absorbed; in ECA A the assault cannot move before the D+16 terms deadline.
+// OCA 2 launches FRACTURE the day 4 Div is massed, so it has no spare day.
+const SPARE1 = 1;
+function campaignSlip(k, p) {
+  const o1 = k[0] === '1', B = k[1] === 'B';
+  const isrD = p.isr * (B ? 1 : 0.5), miSlip = Math.max(0, p.mcm - D.miSlack[k]);
+  if (o1) {
+    const strike = p.eff <= 1 ? STRIKE[k] * (1 / p.eff - 1) : -OE2[k] * (1 - 1 / p.eff);
+    const pre = (p.bu - 7) + p.hold + p.oe2 + isrD + strike + p.sea;   // sea state hits the shuttle and landing windows
+    const preSlip = pre >= 0 ? Math.max(0, pre - SPARE1) : (B ? Math.max(-LATE[k], pre) : 0);
+    return {slip: preSlip + miSlip, strike, pre, preSlip, miSlip, isrD};
+  }
+  const strike = strikeDays(k, p.eff);
+  const pre = (p.bu - 7) + p.hold + p.oe2 + isrD + strike + p.sea;
+  return {slip: pre + miSlip, strike, pre, preSlip: pre, miSlip, isrD};
+}
+function strikeDays(k, eff) {
+  if (eff <= 1) return STRIKE[k] * (1 / eff - 1);
+  const gain = OE2[k] * (1 - 1 / eff);
+  return k[0] === '1' ? -Math.min(LATE[k], gain) : -gain;
+}
+let st = {oca: '1', eca: 'A', i: 0, play: null, day: null, dpt: null, tab: 'wg'};
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+const para = s => esc(s).split(/\n+/).filter(Boolean).map(x => `<div style="margin-bottom:4px">${x}</div>`).join('');
+const dayLabel = d => d === 0 ? 'D' : (d > 0 ? `D+${d}` : `D${d}`);
+const date = d => new Date(2026, 9, 15 + d).toLocaleDateString('en-GB', {day: '2-digit', month: 'short'});
+const key = () => st.oca + st.eca;
+const pl = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+
+/* ---------- tabs ---------- */
+function tab(t) {
+  st.tab = t;
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+  document.querySelectorAll('.page').forEach(p => p.classList.toggle('on', p.id === 'p-' + t));
+  if (t === 'cmp') compare();
+  if (t === 'as') renderAssumptions();
+  try { history.replaceState(null, '', '#' + t); } catch (e) {}
+}
+document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => tab(b.dataset.t));
+
+function segs() {
+  $('ocaSeg').innerHTML = Object.entries(OCA).map(([k, v]) => `<button data-k="${k}" class="${st.oca === k ? 'on' : ''} ${+k > 2 ? 'dim' : ''}">${v[0]}<small>${v[1]}</small></button>`).join('');
+  $('ecaSeg').innerHTML = Object.entries(ECA).map(([k, v]) => `<button data-k="${k}" class="${st.eca === k ? 'on' : ''} ${'CD'.includes(k) ? 'dim' : ''}">${v[0]}<small>${v[1]}</small></button>`).join('');
+  $('ocaSeg').querySelectorAll('button').forEach(b => b.onclick = () => { stop(); st.oca = b.dataset.k; st.i = 0; st.day = null; st.dpt = null; render(); });
+  $('ecaSeg').querySelectorAll('button').forEach(b => b.onclick = () => { stop(); st.eca = b.dataset.k; st.i = 0; st.day = null; render(); });
+}
+
+/* ---------- what-if (deterministic, selected pairing) ---------- */
+const V = id => +$(id).value;
+function sliders() {
+  return {bu: V('s_bu'), hold: V('s_hold'), mcm: V('s_mcm'), fr: V('s_fr'), hit: V('s_hit'), sor: V('s_sor'), oe2: V('s_oe2'), pgm: V('s_pgm'), lift: V('s_lift'), floor: V('s_floor'), air: V('s_air'),
+    tk: V('s_tk'), isr: V('s_isr'), raf: V('s_raf'), sam: V('s_sam'), sea: V('s_sea'), c102: V('s_102'), react: $('s_react').checked, terms: $('s_terms').checked};
+}
+function effOf(s) {
+  const sortie = Math.min(s.sor / 100, s.tk / 8);
+  const airLoss = s.air * (s.sam / 100);
+  return (s.hit / 100) * sortie * Math.max(0.2, 1 - 2 * airLoss / 100) * Math.min(1.25, 100 / s.raf) * Math.min(1.25, 100 / s.sam);
+}
+function whatIf() {
+  const s = sliders();
+  $('v_tk').textContent = s.tk + ' of 8'; $('v_isr').textContent = '+' + s.isr; $('v_raf').textContent = s.raf + '%'; $('v_sam').textContent = s.sam + '%'; $('v_sea').textContent = '+' + s.sea; $('v_102').textContent = `D+${s.c102} (${date(s.c102)})`;
+  $('v_bu').textContent = s.bu + ' days'; $('v_hold').textContent = '+' + s.hold; $('v_mcm').textContent = '+' + s.mcm; $('v_fr').textContent = s.fr.toFixed(1) + ':1';
+  $('v_hit').textContent = s.hit + '%'; $('v_sor').textContent = s.sor + '%'; $('v_oe2').textContent = '+' + s.oe2; $('v_pgm').textContent = s.pgm + '%';
+  $('v_lift').textContent = '+' + s.lift + '%'; $('v_floor').textContent = s.floor + '%'; $('v_air').textContent = '+' + s.air + '%';
+  if (!wargamed()) { $('fx').innerHTML = '<span class="note">What-if works on the four wargamed pairings (OCA 1 or 2 against ECA A or B).</span>'; return null; }
+  const k = key(), p = D.pairings[k], fx = [], o1 = st.oca === '1';
+  const eff = effOf(s);
+  const cs = campaignSlip(k, {bu: s.bu, hold: s.hold, oe2: s.oe2, isr: s.isr, eff, mcm: s.mcm, sea: s.sea});
+  const isrDays = Math.round(cs.isrD);
+  const fullEffect = s.c102 + 19, early = 15 - s.c102;
+  const oe2Base = STRIKE[k];
+  const strikeSlip = Math.round(cs.strike);
+  // OCA 2's first echelon sails before OE2 inside BrahMos reach: every extra day the launchers survive exposes it; OCA 1 keeps the lift dispersed (DPT3 72 h gate)
+  const launcherDays = Math.max(0, OE2[k] / eff - OE2[k]) + s.oe2 + isrDays;
+  const expoLoss = o1 ? 0 : launcherDays * MS.expo * (st.eca === 'B' ? 1 : 0.5);
+  const liftLost = s.lift + expoLoss;
+  const miSlip = cs.miSlip;
+  const slip = Math.round(cs.slip);
+  let [lo, hi] = BASE[k];
+  let dp7 = p.dp16, special = null;
+  if (!o1 && !s.react) { if (st.eca === 'A') { lo = 26; hi = 26; } dp7 = 'NOT MET'; fx.push('RF does not react: strikes return to the fixed deep targets after 72 h (B7); RF keeps its offensive forces. Wargame test case: handover ~D+26.'); }
+  lo += slip; hi += slip;
+  const reserveLeft = (s.pgm / 80) - 0.75 / (s.hit / 100);
+  const resPct = Math.max(-100, Math.round(reserveLeft / 0.25 * 100));
+  $('g_pgm').style.width = Math.max(0, Math.min(100, resPct)) + '%';
+  $('g_pgm').style.background = resPct >= 80 ? 'var(--fav)' : resPct >= 40 ? 'var(--con)' : 'var(--rf)';
+  $('t_pgm').textContent = resPct >= 0 ? `Decisive-phase reserve left: ${resPct}% of the planned 25%` : 'PGMs run out before the decisive phase';
+  if (strikeSlip > 0) fx.push(o1 ? `Strike effectiveness ${Math.round(eff * 100)}% of plan: SHOCK takes ~${Math.round(oe2Base / eff)} days to OE2 instead of ${oe2Base}; the dispersed lift waits ${pl(strikeSlip, 'day')} (time, not ships).` : `Strike effectiveness ${Math.round(eff * 100)}% of plan: OE2 plus EXPOSE & NEUTRALISE take ~${Math.round(oe2Base / eff)} days instead of ${oe2Base}; ROLL UP and handover move ${pl(strikeSlip, 'day')}.`);
+  if (expoLoss >= 0.5) fx.push(`Launchers survive ~${launcherDays.toFixed(1)} days longer while OCA 2's first echelon is already at sea in BrahMos reach: ~${expoLoss.toFixed(0)}% more of the lift lost (model: ${MS.expo}% a day${st.eca === 'B' ? '' : ', halved in ECA A'}).`);
+  if (o1 && cs.pre > 0.5 && Math.round(cs.preSlip) < Math.round(cs.pre)) fx.push(`OCA 1 masses 4 Div a day before its assault, so ${Math.round(cs.pre) - Math.round(cs.preSlip) === 1 ? 'the first day' : 'part'} of the ~${pl(Math.round(cs.pre), 'day')} delay before the assault is absorbed (OCA 2 has no spare day before FRACTURE).`);
+  if (strikeSlip < 0) fx.push(o1 ? `Strike effectiveness ${Math.round(eff * 100)}% of plan: OE2 earlier${st.eca === 'B' ? `; the assault can move back towards D+16 (up to ${LATE[k]} days)` : ', but the assault stays tied to the D+16 terms deadline'}.` : `Strike effectiveness ${Math.round(eff * 100)}% of plan: OE2 ~${pl(-strikeSlip, 'day')} early; EXPOSE & NEUTRALISE stays a fixed 5 days.`);
+
+  if (s.tk < 8 && s.tk / 8 < s.sor / 100) fx.push(`Only ${s.tk} tankers: strike sorties capped at ${Math.round(s.tk / 8 * 100)}% of plan.`);
+  if (s.raf > 100) fx.push(`RAF generates ${s.raf}% of planned sorties: BF sorties divert to counter-air and air superiority (${o1 ? 'DP3' : 'DP4'}) comes later.`);
+  if (s.sam > 100) fx.push(`RF SAMs ${s.sam}% as effective as planned: more SEAD per package and more BF aircraft lost.`);
+  if (isrDays) fx.push(`ISR takes ${pl(s.isr, 'more day')} to find moved launchers${st.eca === 'B' ? '' : ' (half effect: in ECA A the launchers mostly stay at JORDON)'}: OE2 and the lift move ${pl(isrDays, 'day')}.`);
+  if (s.sea) fx.push(`${pl(s.sea, 'day')} lost to sea state: landing, shuttle and MCM windows slip day for day.`);
+  if (early > 0) fx.push(`102 Corps can deploy ${pl(early, 'day')} earlier than the given 30 Oct: less time to cut GL off before RF can reinforce it, so DP5 is at risk; strike the landing ships (${o1 ? 'B3' : 'B5'}).`);
+  if (early < 0) fx.push(`102 Corps deploys ${pl(-early, 'day')} later than the given 30 Oct: more margin to cut GL off.`);
+  if (s.c102 !== 15) fx.push(`102 Corps full effect ~D+${fullEffect} (${date(fullEffect)}).`);
+  if (fullEffect <= 30) { dp7 = 'NOT MET'; fx.push('102 Corps reaches full effect before D+30: RF is a credible threat at D+30 (DP7 not met).'); }
+  if (s.bu !== 7) fx.push(`${s.bu > 7 ? 'Slower' : 'Faster'} build-up: ${o1 ? 'ASSAULT (DPT7)' : 'FRACTURE (DPT9)'} moves by ${pl(Math.abs(s.bu - 7), 'day')}${s.bu > 7 ? ', giving RF more time and bringing it closer to 30 Oct, when 102 Corps can deploy' : ''}.`);
+  if (s.oe2) fx.push(o1 ? 'Launchers survive longer: the shuttle waits at NOKKIA (DPT3 needs 72 h with no launch).' : 'Launchers survive longer: the NOKKIA shuttle (DPT3) waits; the first echelon is already at sea, so the lift stays exposed (OE2, BF CV2b).');
+  if (s.hold > 2 && o1) fx.push('Lift held more than 2 days: beyond the B5 cap set at the wargame; CDF decision needed.');
+  if (s.hold && !o1) fx.push('First echelon held at sea longer (B8): the corridor is re-tested daily at DPT6.');
+  if (s.mcm) fx.push(miSlip ? `MI mine lane ${s.mcm} days late: MI now sets handover (+${pl(miSlip, 'day')}).` : `MI mine lane ${s.mcm} days late: absorbed by MI's ${D.miSlack[k]} days of slack.`);
+  if (s.fr < 3) fx.push(`Below 3:1 at the point of attack: commit the joint reserve early (${o1 ? 'B6 at DPT8' : 'B11'}); risk to D+30 rises.`);
+  if (s.fr > 3) fx.push('Above 3:1: the attack on 301 Div has margin; the joint reserve stays uncommitted longer.');
+  if (resPct < 40) { fx.push(resPct < 0 ? 'PGMs run out before the decisive phase: selective strikes to D+30 stop, so DP7 is not met.' : 'Decisive-phase PGM reserve below 40%: less fire for the assault and for striking RF to D+30.'); if (resPct < 0) dp7 = 'NOT MET'; }
+  if (100 - liftLost < s.floor) { special = 'lift'; fx.push(`Lift left (${(100 - liftLost).toFixed(0)}%) is below the landing floor (${s.floor}%): ${o1 ? 'S3, sea and air isolation becomes the main effort' : 'S2, 4 Div defends west GL and BF isolates GL, MI and WATSONS by sea and air'}. GL is not restored by D+30.`); }
+  else if (liftLost >= 0.5) fx.push(`${liftLost.toFixed(0)}% more of the lift lost: still above the ${s.floor}% floor, so the landing goes ahead with fewer hulls.`);
+  if (s.terms) { special = special || 'terms'; fx.push(o1 ? 'RL accepts the terms by D+16 (S1): no assault; 4 Div supervises the withdrawal; RF shipping on declared routes is not attacked.' : 'RL accepts the terms after FRACTURE (S4): ROLL UP is not needed; supervised withdrawal.'); }
+  const spare = 30 - hi;
+  let rating = hi <= 28 ? 'FAVOURABLE' : (hi <= 30 ? 'CONTESTED' : 'UNFAVOURABLE');
+  if (special === 'lift') rating = 'UNFAVOURABLE';
+  if (early >= 2 && rating === 'FAVOURABLE') rating = 'CONTESTED';
+  if (hi > 30 && special !== 'lift') fx.push(`D+30 missed: hold the ground taken and report to the War Council (${o1 ? 'S2' : 'S3'}).`);
+  if (!fx.length) fx.push('Wargame baseline. Move a slider to test an assumption.');
+  $('fx').innerHTML = '<ul style="margin:0;padding-left:18px">' + fx.map(x => `<li>${esc(x)}</li>`).join('') + '</ul>';
+  const changed = slip !== 0 || (!o1 && !s.react) || special || resPct < 40 || s.fr !== 3 || liftLost >= 0.5 || s.c102 !== 15;
+  return {lo, hi, spare, rating, dp7, special, changed, fullEffect};
+}
+
+function tiles(w) {
+  if (!w) {
+    const a = D.assessed[key()];
+    if (a) {
+      const cls = a.rating.startsWith('FAV') ? 'FAVOURABLE' : 'CONTESTED';
+      $('tiles').innerHTML = `<div class="tile ${cls}"><div class="k">Assessed result</div><div class="v" style="font-size:18px">${a.rating}</div><div class="s">syndicate judgement · not wargamed</div></div>
+        <div class="tile"><div class="k">Handover</div><div class="v" style="font-size:18px">Not wargamed</div><div class="s">no timing claimed</div></div>
+        <div class="tile"><div class="k">Covered by</div><div class="v" style="font-size:18px">${a.branches.join(', ')}</div><div class="s">branches already in the plan</div></div>
+        <div class="tile ${a.dp16 === 'NOT MET' ? 'UNFAVOURABLE' : 'CONTESTED'}"><div class="k">DP7 · assessed</div><div class="v" style="font-size:18px">${a.dp16}</div><div class="s">102 Corps full effect ~D+34</div></div>`;
+      $('headline').textContent = `${ECA[st.eca][0]} is unfavourable to RF, so it was assessed, not wargamed. The assessment below shows how ${OCA[st.oca][0]} holds it.`;
+    } else {
+      const o = D.ocaExtra[st.oca];
+      $('tiles').innerHTML = `<div class="tile UNFAVOURABLE"><div class="k">${OCA[st.oca][0]}</div><div class="v" style="font-size:18px">UNFAVOURABLE</div><div class="s">failed OCA screening · not wargamed</div></div>
+        <div class="tile"><div class="k">Key risk</div><div class="s" style="color:var(--ink);font-size:14px;margin-top:4px">${esc(o.risk)}</div></div>
+        <div class="tile"><div class="k">Idea kept</div><div class="s" style="color:var(--ink);font-size:14px;margin-top:4px">${esc(o.kept)}</div></div>
+        <div class="tile"><div class="k">Against ${ECA[st.eca][0]}</div><div class="s" style="color:var(--ink);font-size:14px;margin-top:4px">${esc(o.vs[st.eca])}</div></div>`;
+      $('headline').textContent = `${OCA[st.oca][0]} ${o.catch} is unfavourable: it failed OCA screening, so it was not wargamed.`;
+    }
+    return;
+  }
+  const p = D.pairings[key()];
+  $('tiles').innerHTML = `
+    <div class="tile ${w.rating}"><div class="k">D+30 result${w.changed ? ' (what-if)' : ''}</div><div class="v">${w.rating}</div><div class="s">${w.rating === 'FAVOURABLE' ? 'handover with days in hand' : w.rating === 'CONTESTED' ? 'handover at risk of missing D+30' : 'D+30 missed'}</div></div>
+    <div class="tile"><div class="k">GL, WATSONS, MI handover</div><div class="v">${w.special === 'lift' ? 'Not by D+30' : w.special === 'terms' ? 'RF withdraws' : (w.lo === w.hi ? '~' + dayLabel(w.lo) : '~D+' + w.lo + '–' + w.hi)}</div><div class="s">${w.special === 'lift' ? 'isolation-led campaign (S3 / S2)' : w.special === 'terms' ? 'supervised withdrawal (S1 / S4)' : date(w.lo) + (w.lo !== w.hi ? '–' + date(w.hi) : '') + ' 2026'}</div></div>
+    <div class="tile"><div class="k">Days in hand before D+30</div><div class="v">${w.spare >= 0 ? w.spare + (w.lo !== w.hi ? '–' + (30 - w.lo) : '') : '−' + (-w.spare)}</div><div class="s">D+30 = 14 Nov</div></div>
+    <div class="tile ${w.dp7 === 'NOT MET' ? 'UNFAVOURABLE' : 'CONTESTED'}"><div class="k">DP7 · RF threat at D+30</div><div class="v">${w.dp7}</div><div class="s">102 Corps full effect ~D+${w.fullEffect} (${date(w.fullEffect)})</div></div>`;
+  $('headline').textContent = p.headline;
+}
+
+/* ---------- timeline + campaign clock ---------- */
+const X0 = -14, X1 = 34;
+const pct = d => ((d - X0) / (X1 - X0) * 100);
+function timeline() {
+  const on = !!D.phases[st.oca];
+  document.querySelectorAll('.wgonly').forEach(e => { if (e.id !== 'wgcard') e.style.display = on && wargamed() ? '' : 'none'; });
+  if (!on) { $('tl').innerHTML = ''; return; }
+  const p = D.pairings[key()] || {rows: []}, ph = D.phases[st.oca];
+  let h = '<div class="axis">';
+  for (let d = X0; d <= X1; d++) {
+    if (d % 2 === 0) h += `<div class="tick" style="left:${pct(d)}%"><b>${dayLabel(d)}</b><br>${date(d)}</div>`;
+    else h += `<div class="tick minor" style="left:${pct(d)}%"></div>`;
+  }
+  h += '</div>';
+  h += '<div class="lane" style="margin-top:18px"><span class="lname">Planned phases</span>' + ph.map(x => x.range ? `<div class="bar plan" style="left:${pct(x.range[0])}%;width:${pct(x.range[1]) - pct(x.range[0])}%" title="${esc(x.label)}">${esc(x.name.replace(/^PH \d+ /, ''))}</div>` : '').join('') + '</div>';
+  const rows = p.rows.map((r, i) => ({r, i})).filter(x => x.r.range);
+  const lanes = [];
+  rows.forEach(x => { let l = lanes.findIndex(end => end <= x.r.range[0]); if (l < 0) { l = lanes.length; lanes.push(-99); } lanes[l] = x.r.range[1]; x.lane = l; });
+  for (let l = 0; l < lanes.length; l++) {
+    h += `<div class="lane" ${l === 0 ? 'style="margin-top:18px"' : ''}>${l === 0 ? '<span class="lname">Wargame · ' + esc(OCA[st.oca][0] + ' v ' + (ECA[st.eca] ? ECA[st.eca][0] : '')) + '</span>' : ''}` + rows.filter(x => x.lane === l).map(x => {
+      const nm = x.r.phase.replace(/\s*\(.*$/, '').replace(/^PH /, 'Ph ');
+      const fut = st.day !== null && x.r.range[0] > st.day;
+      return `<div class="bar play ${x.i === st.i ? 'sel' : ''} ${fut ? 'fut' : ''}" data-i="${x.i}" style="left:${pct(x.r.range[0])}%;width:${Math.max(pct(x.r.range[1]) - pct(x.r.range[0]), 3)}%" title="${esc(x.r.phase)}">${esc(nm)}</div>`;
+    }).join('') + '</div>';
+  }
+  const dps = D.decisions.filter(d => typeof d.day === 'number' && (d.oca === 'Both' || d.oca === 'OCA ' + st.oca));
+  h += '<div class="lane" style="margin-top:18px"><span class="lname">Decision points ★</span>' + dps.map(d => `<div class="star ${st.day !== null && d.day <= st.day ? 'hit' : ''}" data-dpt="${d.dpt}" style="left:${pct(d.day)}%" title="${esc(d.when + ': ' + d.decision)}">★<b>${d.dpt.slice(3)}</b></div>`).join('') + '</div>';
+  const marks = [[0, 'D · 15 Oct', '#5b8def'], [15, '30 Oct: 102 Corps can deploy', '#ff5d5d'], [17, '1 Nov: RL oil export aim', '#f2b84b'], [30, 'D+30 · 14 Nov', '#e7ecf3'], [34, '~D+34: 102 Corps full effect', '#ff5d5d']];
+  h += marks.map(([d, t, c]) => `<div class="mark" style="left:${pct(d)}%;border-color:${c};top:40px" title="${t}"></div>`).join('');
+  h += `<div class="playhead" id="ph" style="left:${pct(st.day ?? X0)}%;${st.day === null ? 'display:none' : ''}"><span id="phl"></span></div>`;
+  h += '<div class="legend">' + marks.map(([d, t, c]) => `<span><i style="border-color:${c}"></i>${t}</span>`).join('') + '<span>★ decision point (lights up when the clock passes it)</span></div>';
+  $('tl').innerHTML = h;
+  $('tl').querySelectorAll('.bar.play').forEach(b => b.onclick = () => { stop(); st.i = +b.dataset.i; st.day = D.pairings[key()].rows[st.i].range[0]; clock(); timeline(); moves(); });
+  $('tl').querySelectorAll('.star').forEach(s => s.onclick = () => { st.dpt = s.dataset.dpt; renderSide(); showDecision(D.decisions.find(d => d.dpt === s.dataset.dpt && (d.oca === 'Both' || d.oca === 'OCA ' + st.oca))); });
+  clock();
+}
+function curEnd() { const w = wargamed() ? whatIfCache : null; return Math.min(X1, Math.max(30, w ? w.hi : 30)); }
+let whatIfCache = null;
+function clock() {
+  if (!wargamed()) return;
+  const d = st.day ?? X0, rows = D.pairings[key()].rows;
+  $('cDay').textContent = dayLabel(d);
+  $('cDate').textContent = new Date(2026, 9, 15 + d).toLocaleDateString('en-GB', {weekday: 'short', day: '2-digit', month: 'short', year: 'numeric'});
+  const r = rows[st.i];
+  $('cPh').textContent = `Phase ${st.i + 1} of ${rows.length} · ${r.phase.replace(/\s*\(.*$/, '')}` + (d > 30 ? ' · past D+30' : d >= 0 ? ` · ${30 - d} days to D+30` : ' · before D');
+  $('cProg').style.width = ((d - X0) / (X1 - X0) * 100) + '%';
+  const ph = $('ph');
+  if (ph) { ph.style.display = st.day === null ? 'none' : ''; ph.style.left = pct(d) + '%'; $('phl').textContent = `${dayLabel(d)} · ${date(d)}`; }
+}
+function showDecision(dec) {
+  if (!dec) return;
+  $('toast').innerHTML = `<b>★ ${esc(dec.dpt)}</b> · ${esc(dec.when)} — ${esc(dec.decision)}`;
+}
+function rowAt(d) {
+  const rows = D.pairings[key()].rows; let i = 0;
+  rows.forEach((r, k) => { if (r.range && r.range[0] <= d) i = k; });
+  return i;
+}
+function tick() {
+  if (!wargamed()) return stop();
+  const end = curEnd();
+  if (st.day === null) st.day = X0;
+  st.day += 1;
+  if (st.day > end) { stop(); return; }
+  const i = rowAt(st.day);
+  const passed = D.decisions.filter(d => typeof d.day === 'number' && Math.floor(d.day) === st.day && (d.oca === 'Both' || d.oca === 'OCA ' + st.oca));
+  if (passed.length) showDecision(passed[passed.length - 1]);
+  if (i !== st.i) { st.i = i; moves(); timeline(); }
+  else {
+    clock();
+    document.querySelectorAll('#tl .star').forEach(s => { const dd = D.decisions.find(d => d.dpt === s.dataset.dpt && (d.oca === 'Both' || d.oca === 'OCA ' + st.oca)); s.classList.toggle('hit', !!dd && dd.day <= st.day); });
+    document.querySelectorAll('#tl .bar.play').forEach(b => { const r = D.pairings[key()].rows[+b.dataset.i]; b.classList.toggle('fut', r.range[0] > st.day); });
+  }
+}
+function stop() { if (st.play) { clearInterval(st.play); st.play = null; } $('play').textContent = '▶ Play'; }
+function togglePlay() {
+  if (!wargamed()) return;
+  if (st.play) return stop();
+  if (st.day === null || st.day >= curEnd()) { st.day = X0 - 1; st.i = 0; $('toast').innerHTML = ''; moves(); }
+  $('play').textContent = '❚❚ Pause';
+  tick();
+  st.play = setInterval(tick, +$('speed').value);
+}
+$('speed').onchange = () => { if (st.play) { clearInterval(st.play); st.play = setInterval(tick, +$('speed').value); } };
+function step(n) {
+  if (!wargamed()) return; stop();
+  const rows = D.pairings[key()].rows, L = rows.length;
+  st.i = (st.i + n + L) % L; st.day = rows[st.i].range ? rows[st.i].range[0] : st.day;
+  const dec = D.decisions.filter(d => typeof d.day === 'number' && d.day <= (st.day ?? X0) && (d.oca === 'Both' || d.oca === 'OCA ' + st.oca)).pop();
+  if (dec) showDecision(dec);
+  timeline(); moves();
+}
+
+function assessPanel() {
+  const on = !wargamed();
+  $('assess').className = 'card assess' + (on ? ' on' : '');
+  $('wgcard').className = 'card wgonly' + (on ? ' off' : '');
+  if (!on) return;
+  if (D.ocaExtra[st.oca]) {
+    const o = D.ocaExtra[st.oca];
+    $('assess').innerHTML = `<div class="phasehead"><h2>${o.name} ${esc(o.catch)}</h2><span class="badge out" style="border-color:var(--unf);color:var(--unf)">UNFAVOURABLE · FAILED SCREENING · NOT WARGAMED</span></div>
+      <p><b>Concept:</b> ${esc(o.concept)}</p>
+      <div class="scr">${o.screen.map(([c, v, why]) => `<div><b>${c}</b><span class="v-${v}">${v}</span>${why ? ' – ' + esc(why) : ''}</div>`).join('')}</div>
+      <div class="below"><div class="mv them"><h3>Against ${ECA[st.eca][0]} (assessed)</h3>${esc(o.vs[st.eca])}</div><div class="mv us"><h3>What we kept</h3>${esc(o.kept)}</div></div>`;
+  } else {
+    const a = D.assessed[key()], e = D.ecaExtra[st.eca];
+    $('assess').innerHTML = `<div class="phasehead"><h2>${OCA[st.oca][0]} against ${e.name}</h2><span class="badge">ECA UNFAVOURABLE TO RF · ASSESSED, NOT WARGAMED</span></div>
+      <div class="below"><div class="mv them"><h3>${e.name} (${esc(e.msO)})</h3><p style="margin:0"><b>Central idea:</b> ${esc(e.central)}</p><p><b>Method:</b> ${esc(e.method)}</p><p class="note">${esc(e.why)}</p></div>
+      <div class="mv us"><h3>How ${OCA[st.oca][0]} holds it</h3>${esc(a.text)}<p class="note"><b>Watch for:</b> ${esc(a.watch)}</p></div></div>
+      <div style="margin-top:10px"><div class="lbl">Branches that cover it (click for the register entry)</div><div class="chips" id="achips">${a.branches.map(id => `<span class="chip" data-id="${id}">${id}${D.branches[st.oca][id] && D.branches[st.oca][id].note ? '*' : ''}</span>`).join('')}</div></div><div class="drawer" id="adrawer"></div>`;
+    $('achips').querySelectorAll('.chip').forEach(c => c.onclick = () => drawer('adrawer', c.dataset.id));
+  }
+}
+function drawer(el, id) {
+  const b = D.branches[st.oca] && D.branches[st.oca][id]; if (!b) return;
+  $(el).className = 'drawer on';
+  $(el).innerHTML = `<b>${id}</b> · ${OCA[st.oca][0]} ${id[0] === 'S' ? 'sequel' : 'branch'}<dl><dt>Trigger</dt><dd>${esc(b.trigger)}</dd><dt>Decision point</dt><dd>${esc(b.dpt)}</dd><dt>Action</dt><dd>${esc(b.action)}</dd><dt>Returns / departs</dt><dd>${esc(b.returns)}</dd></dl>${b.note ? `<div class="note" style="margin-top:6px">* ${esc(b.note)}</div>` : ''}`;
+}
+function moves() {
+  if (!wargamed()) return;
+  const p = D.pairings[key()], r = p.rows[st.i];
+  $('phaseIdx').textContent = `Phase ${st.i + 1} of ${p.rows.length}`;
+  $('phaseName').textContent = r.phase;
+  $('mvRh').textContent = `RF reaction (${ECA[st.eca][0]})`;
+  $('mvA').innerHTML = para(r.action); $('mvR').innerHTML = para(r.reaction); $('mvC').innerHTML = para(r.counter);
+  $('mvK').innerHTML = para(r.conditions); $('mvO').innerHTML = para(r.outcome);
+  const ids = (r.branches.match(/\b[BS]\d+\b/g) || []);
+  const extra = r.branches.replace(/\b[BS]\d+\b/g, '').replace(/[;,]/g, ' ').trim();
+  const nb = id => D.branches[st.oca] && D.branches[st.oca][id] && D.branches[st.oca][id].note;
+  $('chips').innerHTML = ids.map(id => `<span class="chip ${id[0] === 'S' ? 'seq' : ''}" data-id="${id}" ${nb(id) ? 'title="' + esc(nb(id)) + '"' : ''}>${id}${nb(id) ? '*' : ''}${id[0] === 'S' ? ' sequel' : ''}</span>`).join('') + (extra ? `<span class="note" style="align-self:center">${esc(extra)}</span>` : '') + (!ids.length && !extra ? '<span class="note">None</span>' : '');
+  $('drawer').className = 'drawer';
+  $('chips').querySelectorAll('.chip').forEach(c => c.onclick = () => drawer('drawer', c.dataset.id));
+}
+function renderSide() {
+  const g = ['1', '2'].map(o => `<div class="h" style="align-self:center">${OCA[o][0]}</div>` + ['A', 'B', 'C', 'D'].map(e => {
+    const p = D.pairings[o + e] || D.assessed[o + e]; const ass = !D.pairings[o + e];
+    const fav = p.rating.startsWith('FAV');
+    const bg = fav ? 'var(--favbg)' : 'var(--conbg)', col = fav ? 'var(--fav)' : 'var(--con)';
+    return `<div class="cell ${o + e === key() ? 'sel' : ''}" data-k="${o + e}" title="${p.rating}" style="background:${bg};color:${col};${ass ? 'opacity:.75;border-style:dashed;border-color:#4a5568' : ''}">${p.rating.replace('FAVOURABLE–CONTESTED', 'FAV–CON').replace('FAVOURABLE', 'FAV').replace('CONTESTED', 'CON')}<small>${ass ? 'assessed · ' : ''}DP7 ${p.dp16.toLowerCase()}</small></div>`;
+  }).join('')).join('');
+  $('grid').innerHTML = '<div></div><div class="h">ECA A<br>probable</div><div class="h">ECA B<br>dangerous</div><div class="h">ECA C<br>unfav. to RF</div><div class="h">ECA D<br>unfav. to RF</div>' + g;
+  $('grid').querySelectorAll('.cell').forEach(c => c.onclick = () => { stop(); st.oca = c.dataset.k[0]; st.eca = c.dataset.k[1]; st.i = 0; st.day = null; render(); });
+  $('bluf').textContent = 'FAV = favourable, CON = contested. ' + D.bluf + ' ECAs C and D are unfavourable to RF, so our OCAs were assessed against them, not wargamed. OCAs 3–5 are unfavourable (failed screening).';
+  $('riskOca').textContent = OCA[st.oca][0];
+  $('risks').innerHTML = !D.risks[st.oca] ? `<div class="risk"><div class="t">unfavourable · failed screening</div>${esc(D.ocaExtra[st.oca].risk)}</div>` : D.risks[st.oca].map(r => `<div class="risk"><div class="t">${esc(r.type)}</div>${esc(r.risk)}${r.hold ? `<div class="note" style="margin-top:3px">Impact: ${esc(r.hold)}</div>` : ''}</div>`).join('');
+  $('dpOca').textContent = OCA[st.oca][0];
+  const dps = D.decisions.filter(d => d.oca === 'Both' || d.oca === 'OCA ' + st.oca);
+  $('dps').innerHTML = dps.map(d => `<div class="dp ${st.dpt === d.dpt ? 'sel' : ''}" data-dpt="${d.dpt}"><b>${esc(d.when)}</b><div>${esc(d.decision)}</div><div class="d">${d.conditions ? '<b>Conditions:</b> ' + esc(d.conditions) + '<br>' : ''}${d.pir ? '<b>PIR:</b> ' + esc(d.pir) + '<br>' : ''}${d.ffir ? '<b>FFIR:</b> ' + esc(d.ffir) : ''}</div></div>`).join('');
+  $('dps').querySelectorAll('.dp').forEach(x => x.onclick = () => { st.dpt = st.dpt === x.dataset.dpt ? null : x.dataset.dpt; renderSide(); });
+}
+function render() {
+  segs();
+  whatIfCache = whatIf();
+  $('wi').className = 'card wi' + (wargamed() ? '' : ' disabled');
+  tiles(whatIfCache); timeline(); assessPanel(); moves(); renderSide();
+  if (st.tab === 'cmp') compare();
+}
+
+/* ---------- compare: Monte Carlo ---------- */
+const MS_DEF = {
+  l1A: 3, l1B: 10, l2A: 8, l2B: 25,           // max lift lost to RF missiles before landing, % (uniform 0..max; OCA 2 ECA B from 5)
+  air1: 7, air2: 17,                            // day air superiority is won (deck)
+  airWk: 2,                                     // % of strike aircraft lost per week in contested air
+  att1: 30, att2: 10,                           // % of 301 Div degraded before the assault
+  expo: 2,                                      // % of OCA 2's lift lost per extra day launchers survive (ECA B; half in ECA A)
+};
+const MS_META = [
+  ['l1A', 'OCA 1 v ECA A · max lift lost', 0, 30, 1, '%', 'OCA 1 keeps the lift dispersed until the shuttle; RF does not strike before D in ECA A.'],
+  ['l1B', 'OCA 1 v ECA B · max lift lost', 0, 40, 1, '%', 'Dispersed lift struck before D; the deck rates this risk partly mitigated.'],
+  ['l2A', 'OCA 2 v ECA A · max lift lost', 0, 30, 1, '%', 'First echelon embarks at MONACO; launchers stay at JORDON, out of reach, until BF strikes.'],
+  ['l2B', 'OCA 2 v ECA B · max lift lost', 0, 50, 1, '%', 'Lift massed at MONACO inside BrahMos reach, sails before OE2; the deck leaves this risk open. Range starts at 5%.'],
+  ['air1', 'OCA 1 · air superiority by', 3, 20, 1, 'day', 'Deck: air superiority ~D+7 in OCA 1.'],
+  ['air2', 'OCA 2 · air superiority by', 5, 25, 1, 'day', 'Deck: RAF contests GL ~D+10–15; suppressed ~D+17 in OCA 2.'],
+  ['airWk', 'Aircraft lost per week in contested air', 0, 8, 0.5, '%', 'Base attrition before air superiority; the what-if extra is added on top.'],
+  ['att1', 'OCA 1 · 301 Div degraded before assault', 0, 50, 5, '%', '16 days of isolation and strikes, 7 days with no resupply before ASSAULT (DPT7).'],
+  ['att2', 'OCA 2 · 301 Div degraded before FRACTURE', 0, 50, 5, '%', 'FRACTURE at D+8, before air superiority; 4 Div attacks near its culminating point.'],
+  ['expo', 'OCA 2 · lift lost per extra launcher day', 0, 5, 0.5, '%', 'OCA 2 sails its first echelon before OE2 inside BrahMos reach; OCA 1 holds the lift dispersed until 72 h with no launch. Halved in ECA A.'],
+];
+let MS = {...MS_DEF};
+function msUI() {
+  $('ms').innerHTML = MS_META.map(([k, n, mn, mx, stp, u, h]) => `<div class="sl"><label>${n} <span id="m_${k}v">${u === 'day' ? 'D+' + MS[k] : MS[k] + u}</span></label><input type="range" id="m_${k}" min="${mn}" max="${mx}" step="${stp}" value="${MS[k]}"><div class="hint">${h}</div></div>`).join('');
+  MS_META.forEach(([k, , , , , u]) => $('m_' + k).oninput = e => { MS[k] = +e.target.value; $('m_' + k + 'v').textContent = u === 'day' ? 'D+' + MS[k] : MS[k] + u; compare(); });
+}
+$('msReset').onclick = () => { MS = {...MS_DEF}; msUI(); compare(); };
+function rng(seed) { let a = seed >>> 0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function tri(r, a, m, b) { const u = r(), f = (m - a) / (b - a); return u < f ? a + Math.sqrt(u * (b - a) * (m - a)) : b - Math.sqrt((1 - u) * (b - a) * (b - m)); }
+function sim(oca, eca, s, N = 2000) {
+  const k = oca + eca, r = rng(1234 + k.charCodeAt(0) * 7 + k.charCodeAt(1));
+  const effB = effOf(s), oe2 = STRIKE[k], oe2L = OE2[k], slack = D.miSlack[k], B = eca === 'B';
+  let [lo, hi] = BASE[k];
+  if (oca === '2' && !s.react && eca === 'A') { lo = 26; hi = 26; }
+  const lmax = MS['l' + k], lmin = k === '2B' ? Math.min(5, lmax) : 0;
+  const reserve = (s.pgm / 80) - 0.75 / (s.hit / 100);
+  let ok = 0, hs = [], lifts = 0, slipSum = 0;
+  for (let n = 0; n < N; n++) {
+    const bu = tri(r, s.bu - 2, s.bu, s.bu + 2);
+    const eff = effB * Math.min(1.3, Math.max(0.6, 1 + (r() + r() + r() - 1.5) * 0.3));
+    const sslip = campaignSlip(k, {bu: 7, hold: 0, oe2: 0, isr: 0, eff, mcm: 0, sea: 0}).strike;
+    const isr = s.isr * (B ? 1 : 0.5);          // moved launchers are already in the ECA B wargame
+    const u = r(), sea = s.sea + (u < 0.8 ? 0 : u < 0.95 ? 1 : 2);
+    const mcm = s.mcm + Math.floor(r() * 3);
+    const hold = s.hold;                          // B5 / B8 holds are already in the wargame result
+    const h = lo + r() * (hi - lo) + campaignSlip(k, {bu, hold, oe2: s.oe2, isr: s.isr, eff, mcm, sea}).slip;
+    const expo = oca === '2' ? (Math.max(0, oe2L / eff - oe2L) + s.oe2 + isr) * MS.expo * (B ? 1 : 0.5) : 0;
+    const lift = lmin + r() * (lmax - lmin) + s.lift + expo;
+    hs.push(h); lifts += lift; slipSum += Math.max(0, sslip);   // only extra strike days draw extra PGMs
+    if (Math.round(h) <= 30 && 100 - lift >= s.floor && reserve >= 0) ok++;
+  }
+  hs.sort((a, b) => a - b);
+  const airDays = MS['air' + oca] * (Math.min(1.4, s.raf / 100));
+  const aircraft = (MS.airWk + s.air) * (s.sam / 100) * airDays / 7;
+  const ratio = s.fr / (1 - MS['att' + oca] / 100);
+  const x = 0.64 * 3 / (ratio * ratio);
+  const cas = x >= 1 ? 100 : (1 - Math.sqrt(1 - x)) * 100;
+  const ler = cas >= 100 ? 0 : 0.4 / (cas / 100 * ratio);
+  const pgm = Math.min(150, 75 / (s.hit / 100) * (80 / s.pgm) + 2 * slipSum / N);
+  return {p: ok / N * 100, med: hs[Math.floor(N / 2)], p90: hs[Math.floor(N * 0.9)], lift: lifts / N, aircraft, ratio, cas, ler, pgm};
+}
+const METRICS = [
+  ['p', 'Chance of success by D+30', 'handover by D+30, lift above floor, PGMs last', v => v.toFixed(0) + '%', 1, 2],
+  ['med', 'Expected handover (median)', 'GL, WATSONS and MI handed over', v => 'D+' + v.toFixed(1), -1, 0.3],
+  ['p90', 'Handover, bad case (90th percentile)', '1 run in 10 is later than this', v => 'D+' + v.toFixed(1), -1, 0.3],
+  ['lift', 'Amphibious lift lost', 'to RF missiles before landing', v => v.toFixed(1) + '%', -1, 2],
+  ['aircraft', 'Strike aircraft lost', 'before air superiority', v => v.toFixed(1) + '%', -1, 0.2],
+  ['ratio', 'Force ratio at the assault', 'on 301 Div, after strikes', v => v.toFixed(1) + ':1', 1, 0.2],
+  ['cas', '4 Div casualties in the assault', 'share of the attacking force', v => v.toFixed(1) + '%', -1, 0.5],
+  ['ler', 'Loss-exchange ratio (RF : BF)', 'RF losses per BF loss in the assault', v => v.toFixed(2) + ' : 1', 1, 0.2],
+  ['pgm', 'PGM drawdown', 'share of stock used by D+30', v => v.toFixed(0) + '%', -1, 2],
+];
+function compare() {
+  const s = sliders(), wb = +$('w_b').value / 100;
+  $('t_wb').textContent = `ECA A ${Math.round((1 - wb) * 100)}% · ECA B ${Math.round(wb * 100)}%`;
+  const R = {}; ['1A', '1B', '2A', '2B'].forEach(k => R[k] = sim(k[0], k[1], s));
+  const W = o => Object.fromEntries(METRICS.map(([m]) => [m, R[o + 'A'][m] * (1 - wb) + R[o + 'B'][m] * wb]));
+  R['1W'] = W('1'); R['2W'] = W('2');
+  let wins = {1: 0, 2: 0, eq: 0};
+  const cell = (a, b, dir, tol, f, own) => {
+    const better = Math.abs(a - b) < tol ? 'eq' : ((a - b) * dir > 0 ? 'win' : 'lose');
+    return `<td class="${better === 'win' ? 'win' : better === 'eq' ? 'eq' : ''}">${f(own)}</td>`;
+  };
+  let h = `<thead><tr><th>Measure</th><th class="o1">OCA 1<br>v ECA A</th><th class="o2">OCA 2<br>v ECA A</th><th class="o1">OCA 1<br>v ECA B</th><th class="o2">OCA 2<br>v ECA B</th><th class="o1">OCA 1<br>weighted</th><th class="o2">OCA 2<br>weighted</th><th>Better</th></tr></thead><tbody>`;
+  METRICS.forEach(([m, name, sub, f, dir, tol]) => {
+    const pair = (x, y) => cell(R[x][m], R[y][m], dir, tol, f, R[x][m]) + cell(R[y][m], R[x][m], dir, tol, f, R[y][m]);
+    const a = R['1W'][m], b = R['2W'][m];
+    const w = Math.abs(a - b) < tol ? 'eq' : ((a - b) * dir > 0 ? '1' : '2');
+    wins[w]++;
+    h += `<tr><td class="m">${name}<small>${sub}</small></td>${pair('1A', '2A')}${pair('1B', '2B')}${pair('1W', '2W')}<td>${w === 'eq' ? '<span class="eq">Level</span>' : `<b class="${w === '1' ? 'o1' : 'o2'}">OCA ${w}</b>`}</td></tr>`;
+  });
+  $('cmpT').innerHTML = h + '</tbody>';
+  const n = METRICS.length;
+  const tileP = (o) => { const p = R[o + 'W'].p; const cls = p >= 70 ? 'FAVOURABLE' : p >= 45 ? 'CONTESTED' : 'UNFAVOURABLE'; return `<div class="tile ${cls}"><div class="k">${OCA[o][0]} ${OCA[o][1]} · chance of success</div><div class="v">${p.toFixed(0)}%</div><div class="s">ECA A ${R[o + 'A'].p.toFixed(0)}% · ECA B ${R[o + 'B'].p.toFixed(0)}% · handover ~D+${Math.round(R[o + 'W'].med)}</div></div>`; };
+  $('score').innerHTML = tileP('1') + tileP('2') + `<div class="tile"><div class="k">Measures won</div><div class="v"><span style="color:var(--bf)">OCA 1: ${wins[1]}</span> · <span style="color:#c3a6ff">OCA 2: ${wins[2]}</span></div><div class="s">${wins.eq} level, of ${n} measures (weighted)</div></div>`;
+  const lead = wins[1] > wins[2] ? '1' : wins[2] > wins[1] ? '2' : null;
+  const d = R['1W'].p - R['2W'].p;
+  $('cmpBluf').textContent = lead
+    ? `OCA ${lead} is better on ${wins[lead]} of ${n} measures. Chance of success by D+30: OCA 1 ${R['1W'].p.toFixed(0)}% against OCA 2 ${R['2W'].p.toFixed(0)}% (${d >= 0 ? '+' : ''}${d.toFixed(0)} points). Lift lost: ${R['1W'].lift.toFixed(1)}% against ${R['2W'].lift.toFixed(1)}%. 4 Div casualties: ${R['1W'].cas.toFixed(1)}% against ${R['2W'].cas.toFixed(1)}%.`
+    : `The OCAs are level on these settings. Chance of success: OCA 1 ${R['1W'].p.toFixed(0)}%, OCA 2 ${R['2W'].p.toFixed(0)}%.`;
+}
+$('w_b').oninput = compare;
+
+/* ---------- assumptions ---------- */
+function renderAssumptions() {
+  const q = ($('asQ').value || '').toLowerCase(), crit = $('asCrit').checked;
+  const match = t => !q || t.toLowerCase().includes(q);
+  let h = '';
+  if (AS && AS.groups) {
+    AS.groups.forEach(g => {
+      const items = g.items.filter(it => (!crit || it.critical) && match(it.text + ' ' + (it.basis || '') + ' ' + (it.ifWrong || '')));
+      if (!items.length) return;
+      h += `<div class="as-grp"><h3>${esc(g.title)} <span class="badge deck">deck</span></h3><div class="as">` + items.map(it => `<div class="it ${it.critical ? 'crit' : ''}">${esc(it.text)}${it.basis ? `<div class="bw"><b>Basis:</b> ${esc(it.basis)}</div>` : ''}${it.ifWrong ? `<div class="bw"><b>If wrong:</b> ${esc(it.ifWrong)}</div>` : ''}</div>`).join('') + '</div></div>';
+    });
+  } else h += '<p class="note">The deck register did not load.</p>';
+  const modelItems = [
+    ...MS_META.map(([k, n, , , , u, hint]) => ({text: `${n}: ${u === 'day' ? 'D+' + MS[k] : MS[k] + u}`, basis: hint})),
+    {text: `Landing floor: ${V('s_floor')}% of the lift is needed to land`, basis: 'The deck gives no landing floor.'},
+    {text: 'Defender in prepared positions is 3× as effective; 301 Div breaks at 40% losses', basis: 'Lanchester square law with the 3:1 rule; used for casualties and the loss-exchange ratio.'},
+    {text: 'Each extra strike day uses ~2% of PGM stock', basis: 'Links strike slips to munition drawdown.'},
+    {text: 'Run-to-run spread: build-up ±2 days, strike effectiveness ±15%, sea state 0–2 days (none in 80% of runs), mine lane 0–2 days', basis: 'Used for the 2,000 runs per pairing; centred on the wargame result, so the wargame friction is not counted twice.'},
+  ].filter(it => !crit && match(it.text + ' ' + it.basis));
+  if (modelItems.length) h += `<div class="as-grp"><h3>Model settings for the numbers tab <span class="badge model">model</span></h3><div class="as">` + modelItems.map(it => `<div class="it">${esc(it.text)}<div class="bw"><b>Why:</b> ${esc(it.basis)}</div></div>`).join('') + '</div></div>';
+  $('asList').innerHTML = h || '<p class="note">No assumption matches.</p>';
+}
+$('asQ').oninput = renderAssumptions; $('asCrit').onchange = renderAssumptions;
+
+/* ---------- wiring ---------- */
+$('prev').onclick = () => step(-1); $('next').onclick = () => step(1); $('play').onclick = togglePlay;
+const DEF = {s_bu: 7, s_hold: 0, s_mcm: 0, s_fr: 3, s_hit: 100, s_sor: 100, s_oe2: 0, s_pgm: 80, s_lift: 0, s_floor: 70, s_air: 0, s_tk: 8, s_isr: 0, s_raf: 100, s_sam: 100, s_sea: 0, s_102: 15};
+[...Object.keys(DEF), 's_react', 's_terms'].forEach(id => $(id).oninput = () => { whatIfCache = whatIf(); tiles(whatIfCache); });
+$('reset').onclick = () => { Object.entries(DEF).forEach(([k, v]) => $(k).value = v); $('s_react').checked = true; $('s_terms').checked = false; whatIfCache = whatIf(); tiles(whatIfCache); };
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  if (e.key === 'n' || e.key === 'N') { tab('cmp'); return; }
+  if (e.key === 'w' || e.key === 'W') { tab('wg'); return; }
+  if (st.tab !== 'wg') return;
+  if (e.key === 'ArrowRight') step(1); else if (e.key === 'ArrowLeft') step(-1);
+  else if (e.key === ' ') { e.preventDefault(); togglePlay(); }
+  else if ('12345'.includes(e.key) && e.key.length === 1) { stop(); st.oca = e.key; st.i = 0; st.day = null; render(); }
+  else if ('ABCDabcd'.includes(e.key) && e.key.length === 1) { stop(); st.eca = e.key.toUpperCase(); st.i = 0; st.day = null; render(); }
+});
+$('method').textContent = D.method;
+msUI();
+render();
+const h0 = (location.hash || '').slice(1); if (['wg', 'cmp', 'as', 'how'].includes(h0)) tab(h0);
+</script>
+</body>
+</html>
